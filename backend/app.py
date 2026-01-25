@@ -101,7 +101,7 @@ def is_private_ip(ip_value):
     except ValueError:
         return False
 
-def get_recent_uploads(limit=5):
+def get_recent_uploads(limit=None):
     db = load_db()
     all_files = []
     for ip, files in db.items():
@@ -110,24 +110,27 @@ def get_recent_uploads(limit=5):
             entry_copy['ip'] = ip
             all_files.append(entry_copy)
     all_files.sort(key=lambda x: x.get('time', 0), reverse=True)
-    recent = all_files[:limit]
-    if not recent:
+    if limit is not None:
+        all_files = all_files[:limit]
+    if not all_files:
         return '<tr><td colspan="5">No uploads yet</td></tr>'
     items = []
-    for entry in recent:
+    for entry in all_files:
         filename = entry.get('filename', 'unknown')
-        safe_name = escape(filename)
         display_name = clean_display_name(filename)
         size_mb = entry.get('size', 0) / 1024**2
         ts = entry.get('time', 0)
         ts_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        exp_ts = entry.get('time', 0) + MAX_AGE_SECONDS
+        exp_str = datetime.datetime.fromtimestamp(exp_ts).strftime('%Y-%m-%d %H:%M:%S')
         ip_value = entry.get('ip', 'unknown')
         country_html = get_country_display(ip_value)
         items.append(
             '<tr>'
-            f'<td><a href="/download/{safe_name}">{escape(display_name)}</a></td>'
+            f'<td>{escape(display_name)}</td>'
             f'<td>{size_mb:.2f} MB</td>'
             f'<td>{ts_str}</td>'
+            f'<td>{exp_str}</td>'
             f'<td>{escape(ip_value)}</td>'
             f'<td>{country_html}</td>'
             '</tr>'
@@ -309,7 +312,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             used_gb = used_bytes / 1024**3
             total_gb = MAX_STORAGE_GB
             percentage = (used_gb / total_gb) * 100 if total_gb > 0 else 0
-            recent_uploads_html = get_recent_uploads(5)
+            recent_uploads_html = get_recent_uploads()
             html = INDEX_TEMPLATE.format(
                 used_gb=used_gb,
                 total_gb=total_gb,
