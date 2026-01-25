@@ -22,6 +22,29 @@ MAX_AGE_SECONDS = config['MAX_AGE_HOURS'] * 3600
 IP_LIMIT_GB = config['IP_LIMIT_GB']
 FILES_DB = config['FILES_DB']
 
+UPLOAD_SCRIPT = '''#!/bin/bash
+
+BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+
+if [ $# -eq 0 ]; then
+    echo "Usage: $0 <file or directory> [file2] [dir2] ..."
+    echo "Set BACKEND_URL env var for custom backend, e.g., export BACKEND_URL=https://dl.itsnooblk.com"
+    exit 1
+fi
+
+temp_zip="/tmp/upload_$(date +%s).tar.gz"
+tar -czf "$temp_zip" "$@"
+upload_file="$temp_zip"
+
+# upload with curl
+url=$(curl -# -F "file=@$upload_file" $BACKEND_URL/upload)
+
+echo "$url"
+
+# cleanup
+rm "$temp_zip"
+'''
+
 logging.basicConfig(filename='logs.log', level=logging.INFO, format='%(asctime)s - %(message)s')
 
 os.makedirs(UPLOAD_DIR, exist_ok=True)
@@ -126,7 +149,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         cleanup_old_files()
-        if self.path.startswith('/download/'):
+        if self.path == '/upload.sh':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')
+            self.end_headers()
+            self.wfile.write(UPLOAD_SCRIPT.encode())
+        elif self.path.startswith('/download/'):
             filename = self.path[len('/download/'):].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(filepath):

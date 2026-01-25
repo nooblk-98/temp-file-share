@@ -15,15 +15,29 @@ A simple backend service for uploading files and folders, storing them locally, 
 - Progress bars for uploads in CLI
 - Multi-file/folder uploads in a single zip
 
-## Direct Upload Commands
+## Quick Start
 
-You can upload files directly using curl without the script:
+Download and use the upload script from your backend:
 
-- Single file: `curl -F "file=@path/to/file" http://localhost:8000/upload`
-- Folder (zip first): `tar -czf archive.tar.gz folder && curl -F "file=@archive.tar.gz" http://localhost:8000/upload`
-- Multiple files/folders: `tar -czf archive.tar.gz file1 folder1 file2 && curl -F "file=@archive.tar.gz" http://localhost:8000/upload`
+```bash
+wget https://dl.itsnooblk.com/upload.sh
+chmod +x upload.sh
+./upload.sh filename.zip
+```
 
-Use `wget` for downloads: `wget http://localhost:8000/download/filename`
+Or set custom backend: `export BACKEND_URL=https://dl.itsnooblk.com && ./upload.sh filename.zip`
+
+## Prerequisites
+
+- Docker and Docker Compose installed (for local deployment)
+- Bash shell (for upload.sh)
+- For public deployment, a server with domain like dl.itsnooblk.com
+
+## Deployment
+
+For local: Use Docker Compose as below.
+
+For public: Deploy the backend to a server (e.g., using Docker on VPS), point domain to it, and set BACKEND_URL.
 
 ## Running the Application
 
@@ -32,10 +46,18 @@ Use `wget` for downloads: `wget http://localhost:8000/download/filename`
    docker-compose up --build
    ```
 
-2. Upload using the script or direct commands above.
+2. Upload using the script:
+   ```bash
+   ./upload.sh file1.txt folder1
+   ```
+
+Or set custom backend: `export BACKEND_URL=https://dl.itsnooblk.com && ./upload.sh file1.txt`
+
+The script will show progress and output download URL, file size, expiration, and storage info.
 
 ## API
 
+- `GET /upload.sh`: Download the upload script
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
 - `GET /download/<filename>`: Download the uploaded file
 
