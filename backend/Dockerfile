@@ -6,6 +6,6 @@ COPY backend.py config.json index.html .
 
 RUN mkdir uploads
 
-EXPOSE 8000
+EXPOSE 54000
 
 CMD ["python3", "backend.py"]

@@ -11,7 +11,7 @@ import json
 import datetime
 import logging
 
-PORT = 8000
+PORT = 54000
 
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
 
@@ -27,47 +27,16 @@ FILES_DB = config['FILES_DB']
 UPLOAD_SCRIPT = '''#!/bin/bash
 
 BACKEND_URL=${BACKEND_URL:-https://dl.itsnooblk.com}
-TOKEN_FILE="${UPLOAD_TOKEN_FILE:-$HOME/.upload_token}"
-UPLOAD_TOKEN=${UPLOAD_TOKEN:-}
-
-if [ -z "$UPLOAD_TOKEN" ] && [ -f "$TOKEN_FILE" ]; then
-    UPLOAD_TOKEN=$(cat "$TOKEN_FILE")
-fi
-
-if [ "$1" = "--token" ]; then
-    if [ -z "$UPLOAD_TOKEN" ]; then
-        echo "No upload token found."
-        exit 1
-    fi
-    echo "$UPLOAD_TOKEN"
-    exit 0
-fi
-
-if [ "$1" = "--check" ]; then
-    if [ -z "$UPLOAD_TOKEN" ]; then
-        echo "No upload token found. Set UPLOAD_TOKEN or upload once to create one."
-        exit 1
-    fi
-    curl -s -H "X-Upload-Token: $UPLOAD_TOKEN" "$BACKEND_URL/token"
-    echo ""
-    exit 0
-fi
 
 if [ "$1" = "--clear" ] || [ "$1" = "-c" ]; then
-    if [ -z "$UPLOAD_TOKEN" ]; then
-        echo "No upload token found. Set UPLOAD_TOKEN or upload once to create one."
-        exit 1
-    fi
-    curl -s -X POST -H "X-Upload-Token: $UPLOAD_TOKEN" "$BACKEND_URL/clear"
+    curl -s -X POST "$BACKEND_URL/clear"
     echo ""
     exit 0
 fi
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <file or directory> [file2] [dir2] ..."
-    echo "       $0 --clear   (delete all files uploaded with your token)"
-    echo "       $0 --check   (show token usage)"
-    echo "       $0 --token   (print your token)"
+    echo "       $0 --clear   (delete all files uploaded from your IP)"
     echo "Set BACKEND_URL env var for custom backend, e.g., export BACKEND_URL=https://yourdomain.com"
     exit 1
 fi
@@ -77,17 +46,9 @@ tar -czf "$temp_zip" "$@"
 upload_file="$temp_zip"
 
 # upload with curl
-if [ -n "$UPLOAD_TOKEN" ]; then
-    response=$(curl -# -H "X-Upload-Token: $UPLOAD_TOKEN" -F "file=@$upload_file" "$BACKEND_URL/upload")
-else
-    response=$(curl -# -F "file=@$upload_file" "$BACKEND_URL/upload")
-fi
+response=$(curl -# -F "file=@$upload_file" "$BACKEND_URL/upload")
 
 echo "$response"
-token=$(echo "$response" | sed -n 's/^Token: //p')
-if [ -n "$token" ]; then
-    echo "$token" > "$TOKEN_FILE"
-fi
 
 # cleanup
 rm "$temp_zip"
@@ -181,44 +142,15 @@ def cleanup_old_files():
 def get_current_used():
     return sum(os.path.getsize(os.path.join(UPLOAD_DIR, f)) for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f)))
 
-def get_token_from_request(handler):
-    header_token = handler.headers.get('X-Upload-Token')
-    if header_token:
-        return header_token.strip()
-    if '?' in handler.path:
-        query = handler.path.split('?', 1)[1]
-        for part in query.split('&'):
-            if part.startswith('token='):
-                return part.split('=', 1)[1].strip()
-    return None
-
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         cleanup_old_files()
-        token = get_token_from_request(self)
-        if self.path == '/token':
-            if not token:
-                self.send_error(400, "Missing upload token")
-                return
-            db = load_db()
-            token_files = db.get(token, [])
-            used_bytes = sum(f['size'] for f in token_files)
-            used_gb = used_bytes / 1024**3
-            remaining_gb = max(IP_LIMIT_GB - used_gb, 0)
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(
-                f'Token: {token}\nFiles: {len(token_files)}\nUsed: {used_gb:.2f} GB\nRemaining: {remaining_gb:.2f} GB'.encode()
-            )
-            return
+        client_ip = self.client_address[0]
         if self.path == '/clear':
-            if not token:
-                self.send_error(400, "Missing upload token")
-                return
             db = load_db()
-            token_files = db.get(token, [])
+            ip_files = db.get(client_ip, [])
             freed_bytes = 0
-            for entry in token_files:
+            for entry in ip_files:
                 filepath = os.path.join(UPLOAD_DIR, entry['filename'])
                 if os.path.exists(filepath):
                     try:
@@ -227,19 +159,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
                         size = 0
                     os.remove(filepath)
                     freed_bytes += size
-            if token in db:
-                del db[token]
+            if client_ip in db:
+                del db[client_ip]
                 save_db(db)
-            logging.info(f'Clear: Token={token}, Freed={freed_bytes}')
+            logging.info(f'Clear: IP={client_ip}, Freed={freed_bytes}')
             self.send_response(200)
             self.end_headers()
             freed_mb = freed_bytes / 1024**2
-            self.wfile.write(f'Cleared files for token {token}. Freed {freed_mb:.2f} MB'.encode())
+            self.wfile.write(f'Cleared files for IP {client_ip}. Freed {freed_mb:.2f} MB'.encode())
             return
         db = load_db()
-        if not token:
-            token = uuid.uuid4().hex
-        token_files = db.get(token, [])
+        ip_files = db.get(client_ip, [])
         content_type = self.headers.get('Content-Type', '')
         data = b''
         if 'multipart/form-data' in content_type:
@@ -254,18 +184,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
             content_length = int(self.headers['Content-Length'])
             data = self.rfile.read(content_length)
         file_size = len(data)
-        current_token_size = sum(f['size'] for f in token_files)
-        if current_token_size + file_size > IP_LIMIT_GB * 1024**3:
-            # delete oldest files for this token
-            token_files.sort(key=lambda x: x['time'])
-            while token_files and current_token_size + file_size > IP_LIMIT_GB * 1024**3:
-                oldest = token_files.pop(0)
-                current_token_size -= oldest['size']
-                filepath = os.path.join(UPLOAD_DIR, oldest['filename'])
-                if os.path.exists(filepath):
-                    os.remove(filepath)
-            db[token] = token_files
-            save_db(db)
+        current_ip_size = sum(f['size'] for f in ip_files)
+        if current_ip_size + file_size > IP_LIMIT_GB * 1024**3:
+            self.send_error(413, "IP limit exceeded. Run ./upload.sh --clear and retry.")
+            return
         current_used = get_current_used()
         if current_used + file_size > MAX_STORAGE_GB * 1024**3:
             self.send_error(413, "Not enough allocated space")
@@ -282,16 +204,16 @@ class Handler(http.server.BaseHTTPRequestHandler):
         filepath = os.path.join(UPLOAD_DIR, filename)
         with open(filepath, 'wb') as f:
             f.write(data)
-        token_files.append({'filename': filename, 'size': file_size, 'time': time.time()})
-        db[token] = token_files
+        ip_files.append({'filename': filename, 'size': file_size, 'time': time.time()})
+        db[client_ip] = ip_files
         save_db(db)
-        logging.info(f'Upload: Token={token}, File={filename}, Size={file_size}')
+        logging.info(f'Upload: IP={client_ip}, File={filename}, Size={file_size}')
         disk_free = shutil.disk_usage(UPLOAD_DIR).free
         allocated_remaining = MAX_STORAGE_GB * 1024**3 - current_used - file_size
-        ip_remaining = IP_LIMIT_GB * 1024**3 - sum(f['size'] for f in token_files)
+        ip_remaining = IP_LIMIT_GB * 1024**3 - sum(f['size'] for f in ip_files)
         expire_time = time.time() + MAX_AGE_SECONDS
         expire_str = datetime.datetime.fromtimestamp(expire_time).strftime('%Y-%m-%d %H:%M:%S')
-        response = f'https://dl.itsnooblk.com/download/{filename}\nToken: {token}\nFile size: {file_size / 1024**2:.2f} MB\nExpires: {expire_str}\nDisk space left: {disk_free / 1024**3:.2f} GB\nAllocated space remaining: {allocated_remaining / 1024**3:.2f} GB\nIP limit remaining: {ip_remaining / 1024**3:.2f} GB'
+        response = f'https://dl.itsnooblk.com/download/{filename}\nFile size: {file_size / 1024**2:.2f} MB\nExpires: {expire_str}\nDisk space left: {disk_free / 1024**3:.2f} GB\nAllocated space remaining: {allocated_remaining / 1024**3:.2f} GB\nIP limit remaining: {ip_remaining / 1024**3:.2f} GB'
         self.send_response(200)
         self.end_headers()
         self.wfile.write(response.encode())
@@ -320,26 +242,11 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')
             self.end_headers()
             self.wfile.write(UPLOAD_SCRIPT.encode())
-        elif self.path.startswith('/token'):
-            token = get_token_from_request(self)
-            if not token:
-                self.send_error(400, "Missing upload token")
-                return
-            db = load_db()
-            token_files = db.get(token, [])
-            used_bytes = sum(f['size'] for f in token_files)
-            used_gb = used_bytes / 1024**3
-            remaining_gb = max(IP_LIMIT_GB - used_gb, 0)
-            self.send_response(200)
-            self.end_headers()
-            self.wfile.write(
-                f'Token: {token}\nFiles: {len(token_files)}\nUsed: {used_gb:.2f} GB\nRemaining: {remaining_gb:.2f} GB'.encode()
-            )
         elif self.path.startswith('/download/'):
             filename = self.path[len('/download/'):].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(filepath):
-                logging.info(f'Download: File={filename}')
+                logging.info(f'Download: IP={self.client_address[0]}, File={filename}')
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/octet-stream')
                 self.send_header('Content-Disposition', f'attachment; filename="{filename}"')

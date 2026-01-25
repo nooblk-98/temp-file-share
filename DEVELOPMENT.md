@@ -15,7 +15,7 @@ This document covers local development and deployment for the File Upload Backen
    ```
 2. Open the service in your browser:
    ```
-   http://localhost:8000
+   http://localhost:54000
    ```
 3. Upload using the script:
    ```bash
@@ -32,7 +32,7 @@ Key settings:
 - `MAX_AGE_HOURS`: file expiration time
 - `IP_LIMIT_GB`: per-IP storage limit
 - `FILES_DB`: JSON database path
-Note: per-uploader limits are keyed by upload token (not IP).
+Note: per-uploader limits are keyed by IP.
 
 ## File Storage
 
@@ -45,8 +45,7 @@ Note: per-uploader limits are keyed by upload token (not IP).
 - `GET /`: Main page
 - `GET /upload.sh`: Download upload script
 - `POST /upload`: Upload a file (multipart/form-data with `file` field)
-- `GET /token`: Show token usage (`X-Upload-Token`)
-- `POST /clear`: Delete all files uploaded with your token (`X-Upload-Token`)
+- `POST /clear`: Delete all files uploaded from the current IP
 - `GET /download/<filename>`: Download uploaded file
 
 ## Troubleshooting
