@@ -58,6 +58,7 @@ INDEX_HTML = '''<!DOCTYPE html>
         .storage-bar {{ width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin: 10px 0; }}
         .storage-used {{ height: 100%; background: #4caf50; transition: width 0.3s; }}
         .storage-text {{ text-align: center; font-size: 14px; }}
+        .limits {{ background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; }}
     </style>
 </head>
 <body>
@@ -70,6 +71,10 @@ INDEX_HTML = '''<!DOCTYPE html>
     </div>
     <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated</div>
     
+    <div class="limits">
+        <strong>Limits:</strong> Files expire after {max_age_hours} hours. Per-IP limit: {ip_limit_gb:.2f} GB.
+    </div>
+    
     <h2>Quick Start</h2>
     <p>Download the upload script and use it:</p>
     <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
@@ -79,8 +84,8 @@ INDEX_HTML = '''<!DOCTYPE html>
     <h2>Features</h2>
     <ul>
         <li>Automatic zipping of folders and multiple files</li>
-        <li>File expiration after 7 days</li>
-        <li>Per-IP storage limits</li>
+        <li>File expiration after {max_age_hours} hours</li>
+        <li>Per-IP storage limits ({ip_limit_gb:.2f} GB)</li>
         <li>Progress bars for uploads</li>
         <li>Direct download links</li>
     </ul>
@@ -206,7 +211,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             used_gb = used_bytes / 1024**3
             total_gb = MAX_STORAGE_GB
             percentage = (used_gb / total_gb) * 100 if total_gb > 0 else 0
-            html = INDEX_HTML.format(used_gb=used_gb, total_gb=total_gb, percentage=percentage)
+            html = INDEX_HTML.format(
+                used_gb=used_gb, 
+                total_gb=total_gb, 
+                percentage=percentage,
+                max_age_hours=config['MAX_AGE_HOURS'],
+                ip_limit_gb=config['IP_LIMIT_GB']
+            )
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
