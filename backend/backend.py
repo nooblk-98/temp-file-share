@@ -90,16 +90,6 @@ INDEX_HTML = '''<!DOCTYPE html>
         <li>Direct download links</li>
     </ul>
     
-    <h2>Direct Upload</h2>
-    <p>Upload single file:</p>
-    <pre><code>curl -F "file=@file.zip" https://dl.itsnooblk.com/upload</code></pre>
-    <p>Upload folder (zip first):</p>
-    <pre><code>tar -czf archive.tar.gz folder && curl -F "file=@archive.tar.gz" https://dl.itsnooblk.com/upload</code></pre>
-    
-    <h2>Download</h2>
-    <p>Use wget or curl to download files:</p>
-    <pre><code>wget https://dl.itsnooblk.com/download/filename</code></pre>
-    
     <footer style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
         Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a> | Powered by OpenCode
     </footer>
