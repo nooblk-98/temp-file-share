@@ -17,18 +17,22 @@ A simple backend service for uploading files and folders, storing them locally, 
 
 ## Quick Start
 
+## Quick Start
+
 Download and use the upload script from your backend in one line:
 
+**Linux/macOS:**
 ```bash
 wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
-
+# Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
-with curl
-
-```bash
-curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
+**Windows (CMD or PowerShell):**
+```cmd
+powershell -Command "Invoke-WebRequest -Uri https://dl.itsnooblk.com/upload.ps1 -OutFile upload.ps1; .\upload.ps1 filename.zip folder/"
 ```
+
+Or set custom backend: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
 
 
 ## Prerequisites
@@ -64,7 +68,8 @@ The script will show progress and output download URL, file size, expiration, an
 ## API
 
 - `GET /`: Main page with usage guide
-- `GET /upload.sh`: Download the upload script
+- `GET /upload.sh`: Download the bash upload script (Linux/macOS)
+- `GET /upload.ps1`: Download the PowerShell upload script (Windows)
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
 - `GET /download/<filename>`: Download the uploaded file
 

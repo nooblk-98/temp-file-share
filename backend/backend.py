@@ -45,6 +45,33 @@ echo "$url"
 rm "$temp_zip"
 '''
 
+UPLOAD_PS1 = '''param(
+    [string]$BackendUrl = "https://dl.itsnooblk.com"
+)
+
+if ($env:BACKEND_URL) {
+    $BackendUrl = $env:BACKEND_URL
+}
+
+if ($args.Count -eq 0) {
+    Write-Host "Usage: .\upload.ps1 <file or directory> [file2] [dir2] ..."
+    Write-Host "Set BACKEND_URL env var for custom backend, e.g., `$env:BACKEND_URL='https://yourdomain.com'"
+    exit 1
+}
+
+$tempZip = "$env:TEMP\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
+Compress-Archive -Path $args -DestinationPath $tempZip -Force
+
+try {
+    $response = Invoke-WebRequest -Uri "$BackendUrl/upload" -Method Post -Form @{ file = Get-Item $tempZip } -UseBasicParsing
+    Write-Host $response.Content
+} catch {
+    Write-Host "Upload failed: $($_.Exception.Message)"
+}
+
+Remove-Item $tempZip -ErrorAction SilentlyContinue
+'''
+
 INDEX_HTML = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -221,6 +248,12 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')
             self.end_headers()
             self.wfile.write(UPLOAD_SCRIPT.encode())
+        elif self.path == '/upload.ps1':
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain')
+            self.send_header('Content-Disposition', 'attachment; filename="upload.ps1"')
+            self.end_headers()
+            self.wfile.write(UPLOAD_PS1.encode())
         elif self.path.startswith('/download/'):
             filename = self.path[len('/download/'):].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
