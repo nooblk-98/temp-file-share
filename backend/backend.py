@@ -28,7 +28,7 @@ BACKEND_URL=${BACKEND_URL:-https://dl.itsnooblk.com}
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <file or directory> [file2] [dir2] ..."
-    echo "Set BACKEND_URL env var for custom backend, e.g., export BACKEND_URL=https://dl.itsnooblk.com"
+    echo "Set BACKEND_URL env var for custom backend, e.g., export BACKEND_URL=https://yourdomain.com"
     exit 1
 fi
 
@@ -43,6 +43,59 @@ echo "$url"
 
 # cleanup
 rm "$temp_zip"
+'''
+
+INDEX_HTML = '''<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Service</title>
+    <style>
+        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
+        pre {{ background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }}
+        .command {{ color: #2e7d32; }}
+        .storage-bar {{ width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin: 10px 0; }}
+        .storage-used {{ height: 100%; background: #4caf50; transition: width 0.3s; }}
+        .storage-text {{ text-align: center; font-size: 14px; }}
+    </style>
+</head>
+<body>
+    <h1>File Upload Service</h1>
+    <p>Upload files and folders easily from your terminal.</p>
+    
+    <h2>Storage Usage</h2>
+    <div class="storage-bar">
+        <div class="storage-used" style="width: {percentage:.1f}%;"></div>
+    </div>
+    <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated</div>
+    
+    <h2>Quick Start</h2>
+    <p>Download the upload script and use it:</p>
+    <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    <p>Or with curl:</p>
+    <pre><code class="command">curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    
+    <h2>Features</h2>
+    <ul>
+        <li>Automatic zipping of folders and multiple files</li>
+        <li>File expiration after 7 days</li>
+        <li>Per-IP storage limits</li>
+        <li>Progress bars for uploads</li>
+        <li>Direct download links</li>
+    </ul>
+    
+    <h2>Direct Upload</h2>
+    <p>Upload single file:</p>
+    <pre><code>curl -F "file=@file.zip" https://dl.itsnooblk.com/upload</code></pre>
+    <p>Upload folder (zip first):</p>
+    <pre><code>tar -czf archive.tar.gz folder && curl -F "file=@archive.tar.gz" https://dl.itsnooblk.com/upload</code></pre>
+    
+    <h2>Download</h2>
+    <p>Use wget or curl to download files:</p>
+    <pre><code>wget https://dl.itsnooblk.com/download/filename</code></pre>
+</body>
+</html>
 '''
 
 logging.basicConfig(filename='logs.log', level=logging.INFO, format='%(asctime)s - %(message)s')
@@ -148,7 +201,17 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
     def do_GET(self):
         cleanup_old_files()
-        if self.path == '/upload.sh':
+        if self.path in ('/', '/index.html'):
+            used_bytes = get_current_used()
+            used_gb = used_bytes / 1024**3
+            total_gb = MAX_STORAGE_GB
+            percentage = (used_gb / total_gb) * 100 if total_gb > 0 else 0
+            html = INDEX_HTML.format(used_gb=used_gb, total_gb=total_gb, percentage=percentage)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.end_headers()
+            self.wfile.write(html.encode())
+        elif self.path == '/upload.sh':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')

@@ -61,6 +61,9 @@ The script will show progress and output download URL, file size, expiration, an
 
 ## API
 
+## API
+
+- `GET /`: Main page with usage guide
 - `GET /upload.sh`: Download the upload script
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
 - `GET /download/<filename>`: Download the uploaded file
