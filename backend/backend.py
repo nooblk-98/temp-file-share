@@ -13,7 +13,9 @@ import logging
 
 PORT = 8000
 
-with open('config.json') as f:
+BASE_DIR = os.path.dirname(os.path.abspath(__file__))
+
+with open(os.path.join(BASE_DIR, 'config.json')) as f:
     config = json.load(f)
 
 UPLOAD_DIR = config['UPLOAD_DIR']
@@ -124,7 +126,7 @@ INDEX_HTML = '''<!DOCTYPE html>
 </html>
 '''
 
-with open('index.html') as f:
+with open(os.path.join(BASE_DIR, 'index.html')) as f:
     INDEX_TEMPLATE = f.read()
 
 def load_db():
