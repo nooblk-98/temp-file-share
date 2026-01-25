@@ -124,8 +124,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             fileitem = form['file']
             if fileitem.filename:
                 orig_name = fileitem.filename
-                name, ext = os.path.splitext(orig_name)
-                filename = f"{name}_{uuid.uuid4().hex}{ext}"
+                filename = f"{uuid.uuid4().hex}_{orig_name}"
             else:
                 filename = str(uuid.uuid4()) + '.bin'
         else:
