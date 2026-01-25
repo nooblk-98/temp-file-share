@@ -5,13 +5,44 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>File Upload Service</title>
     <style>
-        body {{ font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }}
-        pre {{ background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }}
-        .command {{ color: #2e7d32; }}
-        .storage-bar {{ width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin: 10px 0; }}
+        :root {{
+            --bg: #ffffff;
+            --text: #222;
+            --muted: #666;
+            --panel: #f7f7f7;
+            --border: #e6e6e6;
+            --accent: #2e7d32;
+        }}
+        body {{
+            font-family: Arial, sans-serif;
+            max-width: 860px;
+            margin: 0 auto;
+            padding: 24px;
+            background: var(--bg);
+            color: var(--text);
+        }}
+        h1, h2, h3 {{ margin: 0 0 8px; }}
+        p {{ margin: 6px 0 12px; color: var(--muted); }}
+        .storage-bar {{ width: 100%; height: 18px; background: #eee; border-radius: 10px; overflow: hidden; margin: 10px 0; border: 1px solid var(--border); }}
         .storage-used {{ height: 100%; background: linear-gradient(to right, #4caf50, #ff9800, #f44336); transition: width 0.3s; }}
-        .storage-text {{ text-align: center; font-size: 14px; }}
-        .limits {{ background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; }}
+        .storage-text {{ text-align: center; font-size: 13px; color: var(--muted); }}
+        .limits {{ background: var(--panel); padding: 10px 12px; border-radius: 8px; margin: 10px 0; border: 1px solid var(--border); }}
+        .code-block {{ position: relative; margin: 10px 0 16px; }}
+        pre {{ background: var(--panel); padding: 12px 44px 12px 12px; border-radius: 8px; overflow-x: auto; border: 1px solid var(--border); }}
+        code {{ color: var(--accent); }}
+        .copy-btn {{
+            position: absolute;
+            top: 8px;
+            right: 8px;
+            border: 1px solid var(--border);
+            background: #fff;
+            color: #333;
+            padding: 4px 8px;
+            border-radius: 6px;
+            font-size: 12px;
+            cursor: pointer;
+        }}
+        .copy-btn:active {{ transform: translateY(1px); }}
     </style>
 </head>
 <body>
@@ -30,11 +61,17 @@
     
     <h2>Quick Start (Linux/macOS)</h2>
     <p>One line install + upload:</p>
-    <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    <div class="code-block">
+        <button class="copy-btn" data-copy>Copy</button>
+        <pre><code>wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    </div>
 
     <h3>Clear Your Files (Same IP)</h3>
     <p>Delete everything you uploaded from your current IP (one line):</p>
-    <pre><code class="command">curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear</code></pre>
+    <div class="code-block">
+        <button class="copy-btn" data-copy>Copy</button>
+        <pre><code>curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear</code></pre>
+    </div>
     <h2>Features</h2>
     <ul>
         <li>Automatic zipping of folders and multiple files</li>
@@ -47,5 +84,20 @@
     <footer style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
         Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a> 
     </footer>
+    <script>
+        document.querySelectorAll('[data-copy]').forEach((btn) => {{
+            btn.addEventListener('click', async () => {{
+                const code = btn.parentElement.querySelector('code').innerText;
+                try {{
+                    await navigator.clipboard.writeText(code);
+                    btn.textContent = 'Copied';
+                    setTimeout(() => (btn.textContent = 'Copy'), 1200);
+                }} catch (e) {{
+                    btn.textContent = 'Failed';
+                    setTimeout(() => (btn.textContent = 'Copy'), 1200);
+                }}
+            }});
+        }});
+    </script>
 </body>
 </html>
