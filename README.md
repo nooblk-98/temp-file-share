@@ -52,7 +52,7 @@ The script will show progress and output the download URL, file size, expiration
 - Uploads exceeding IP limits trigger automatic deletion of oldest files for that IP.
 - Logs are saved in `backend/logs.log`.
 - No authentication implemented.
-- If running behind Cloudflare proxy, set `TRUST_PROXY` to `true` in `backend/config.json` so per-IP limits and `/clear` use the real client IP.
+- If running behind a reverse proxy, set `TRUST_PROXY` to `true` in `backend/config.json` so per-IP limits and `/clear` use the real client IP (`X-Real-IP`, `CF-Connecting-IP`, or `X-Forwarded-For`).
 
 ## More Docs
 

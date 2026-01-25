@@ -145,6 +145,9 @@ def get_current_used():
 
 def get_client_ip(handler):
     if TRUST_PROXY:
+        x_real_ip = handler.headers.get('X-Real-IP')
+        if x_real_ip:
+            return x_real_ip.strip()
         cf_ip = handler.headers.get('CF-Connecting-IP')
         if cf_ip:
             return cf_ip.strip()
