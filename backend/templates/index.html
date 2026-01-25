@@ -20,22 +20,6 @@
         <strong>Limits:</strong> Files expire after {max_age_hours} hours. Per-IP limit: {ip_limit_gb:.2f} GB.
     </div>
 
-    <h2>Recent Uploads</h2>
-    <table class="recent-table">
-        <thead>
-            <tr>
-                <th>File</th>
-                <th>Size</th>
-                <th>Time</th>
-                <th>IP</th>
-                <th>Country</th>
-            </tr>
-        </thead>
-        <tbody>
-            {recent_uploads_html}
-        </tbody>
-    </table>
-
     <h2>Quick Start (Linux/macOS)</h2>
     <p>One line install + upload:</p>
     <div class="code-block">
@@ -58,6 +42,22 @@
         <li>Progress bars for uploads</li>
         <li>Direct download links</li>
     </ul>
+
+    <h2>Recent Uploads</h2>
+    <table class="recent-table">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Size</th>
+                <th>Time</th>
+                <th>IP</th>
+                <th>Country</th>
+            </tr>
+        </thead>
+        <tbody>
+            {recent_uploads_html}
+        </tbody>
+    </table>
 
     <footer>
         Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a>
