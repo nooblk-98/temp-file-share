@@ -47,7 +47,6 @@ chmod +x upload.sh
 - Expired files are cleaned up automatically.
 - Limits apply per IP.
 - If you hit the IP limit, run `./upload.sh --clear` and try again.
-- If you are behind Cloudflare or another proxy, set `TRUST_PROXY` to `true` in `backend/config.json` so the server uses the real client IP (`CF-Connecting-IP`, `X-Forwarded-For`, `X-Real-IP`).
 
 ## More Docs
 

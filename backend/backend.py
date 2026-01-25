@@ -23,7 +23,6 @@ MAX_STORAGE_GB = config['MAX_STORAGE_GB']
 MAX_AGE_SECONDS = config['MAX_AGE_HOURS'] * 3600
 IP_LIMIT_GB = config['IP_LIMIT_GB']
 FILES_DB = config['FILES_DB']
-TRUST_PROXY = config.get('TRUST_PROXY', False)
 
 UPLOAD_SCRIPT = '''#!/bin/bash
 
@@ -143,23 +142,10 @@ def cleanup_old_files():
 def get_current_used():
     return sum(os.path.getsize(os.path.join(UPLOAD_DIR, f)) for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f)))
 
-def get_client_ip(handler):
-    if TRUST_PROXY:
-        x_real_ip = handler.headers.get('X-Real-IP')
-        if x_real_ip:
-            return x_real_ip.strip()
-        cf_ip = handler.headers.get('CF-Connecting-IP')
-        if cf_ip:
-            return cf_ip.strip()
-        xff = handler.headers.get('X-Forwarded-For')
-        if xff:
-            return xff.split(',')[0].strip()
-    return handler.client_address[0]
-
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         cleanup_old_files()
-        client_ip = get_client_ip(self)
+        client_ip = self.client_address[0]
         if self.path == '/clear':
             db = load_db()
             ip_files = db.get(client_ip, [])
@@ -260,7 +246,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             filename = self.path[len('/download/'):].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(filepath):
-                logging.info(f'Download: IP={get_client_ip(self)}, File={filename}')
+                logging.info(f'Download: IP={self.client_address[0]}, File={filename}')
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/octet-stream')
                 self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
