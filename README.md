@@ -81,6 +81,7 @@ The script will show progress and output download URL, file size, expiration, an
 
 - `backend/`: Contains the Python backend server
   - `backend.py`: The main server script
+  - `index.html`: Template for the main page
   - `config.json`: Configuration file for limits
   - `Dockerfile`: Docker image definition
   - `uploads/`: Directory where uploaded files are stored (created at runtime)

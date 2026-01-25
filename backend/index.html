@@ -1,0 +1,50 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Service</title>
+    <style>
+        body { font-family: Arial, sans-serif; max-width: 800px; margin: 0 auto; padding: 20px; }
+        pre { background: #f4f4f4; padding: 10px; border-radius: 5px; overflow-x: auto; }
+        .command { color: #2e7d32; }
+        .storage-bar { width: 100%; height: 20px; background: #ddd; border-radius: 10px; overflow: hidden; margin: 10px 0; }
+        .storage-used { height: 100%; background: linear-gradient(to right, #4caf50, #ff9800, #f44336); transition: width 0.3s; }
+        .storage-text { text-align: center; font-size: 14px; }
+        .limits { background: #f9f9f9; padding: 10px; border-radius: 5px; margin: 10px 0; }
+    </style>
+</head>
+<body>
+    <h1>File Upload Service</h1>
+    <p>Upload files and folders easily from your terminal.</p>
+    
+    <h2>💾 Storage Usage</h2>
+    <div class="storage-bar">
+        <div class="storage-used" style="width: {percentage:.1f}%;"></div>
+    </div>
+    <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated ({percentage:.1f}%)</div>
+    
+    <div class="limits">
+        <strong>Limits:</strong> Files expire after {max_age_hours} hours. Per-IP limit: {ip_limit_gb:.2f} GB.
+    </div>
+    
+    <h2>Quick Start</h2>
+    <p>Download the upload script and use it:</p>
+    <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    <p>Or with curl:</p>
+    <pre><code class="command">curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    
+    <h2>Features</h2>
+    <ul>
+        <li>Automatic zipping of folders and multiple files</li>
+        <li>File expiration after {max_age_hours} hours</li>
+        <li>Per-IP storage limits ({ip_limit_gb:.2f} GB)</li>
+        <li>Progress bars for uploads</li>
+        <li>Direct download links</li>
+    </ul>
+    
+    <footer style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
+        Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a> | Powered by OpenCode
+    </footer>
+</body>
+</html>

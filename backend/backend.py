@@ -97,9 +97,8 @@ INDEX_HTML = '''<!DOCTYPE html>
 </html>
 '''
 
-logging.basicConfig(filename='logs.log', level=logging.INFO, format='%(asctime)s - %(message)s')
-
-os.makedirs(UPLOAD_DIR, exist_ok=True)
+with open('index.html') as f:
+    INDEX_TEMPLATE = f.read()
 
 def load_db():
     if os.path.exists(FILES_DB):
@@ -205,7 +204,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             used_gb = used_bytes / 1024**3
             total_gb = MAX_STORAGE_GB
             percentage = (used_gb / total_gb) * 100 if total_gb > 0 else 0
-            html = INDEX_HTML.format(
+            html = INDEX_TEMPLATE.format(
                 used_gb=used_gb, 
                 total_gb=total_gb, 
                 percentage=percentage,
