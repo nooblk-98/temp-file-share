@@ -303,7 +303,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
 
 
 def run():
-    with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    class ReusableTCPServer(socketserver.TCPServer):
+        allow_reuse_address = True
+
+    with ReusableTCPServer(("", PORT), Handler) as httpd:
         start_cleanup_thread()
         print(f"Serving on port {PORT}")
         httpd.serve_forever()
