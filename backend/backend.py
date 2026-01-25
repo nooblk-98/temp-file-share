@@ -48,21 +48,23 @@ rm "$temp_zip"
 '''
 
 UPLOAD_PS1 = r'''param(
-    [string]$BackendUrl = "https://dl.itsnooblk.com"
+    [string]$BackendUrl = "https://dl.itsnooblk.com",
+    [Parameter(ValueFromRemainingArguments = $true)]
+    [string[]]$Paths
 )
 
 if ($env:BACKEND_URL) {
     $BackendUrl = $env:BACKEND_URL
 }
 
-if ($args.Count -eq 0) {
+if (-not $Paths -or $Paths.Count -eq 0) {
     Write-Host "Usage: .\upload.ps1 <file or directory> [file2] [dir2] ..."
     Write-Host "Set BACKEND_URL env var for custom backend, e.g., `$env:BACKEND_URL='https://yourdomain.com'"
     exit 1
 }
 
 $tempZip = "$env:TEMP\\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
-Compress-Archive -Path $args -DestinationPath $tempZip -Force
+Compress-Archive -Path $Paths -DestinationPath $tempZip -Force
 
 try {
     $response = Invoke-WebRequest -Uri "$BackendUrl/upload" -Method Post -Form @{ file = Get-Item $tempZip } -UseBasicParsing
