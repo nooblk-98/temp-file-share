@@ -32,6 +32,12 @@
     <p>Download the upload script and use it:</p>
     <p><strong>Linux/macOS:</strong></p>
     <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+
+    <h3>Clear Your Files (Same IP)</h3>
+    <p>Delete all files you uploaded from your current IP:</p>
+    <pre><code class="command">curl -s -X POST https://dl.itsnooblk.com/clear</code></pre>
+    <p>Or using the script:</p>
+    <pre><code class="command">./upload.sh --clear</code></pre>
     <h2>Features</h2>
     <ul>
         <li>Automatic zipping of folders and multiple files</li>

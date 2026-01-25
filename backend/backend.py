@@ -28,8 +28,15 @@ UPLOAD_SCRIPT = '''#!/bin/bash
 
 BACKEND_URL=${BACKEND_URL:-https://dl.itsnooblk.com}
 
+if [ "$1" = "--clear" ] || [ "$1" = "-c" ]; then
+    curl -s -X POST "$BACKEND_URL/clear"
+    echo ""
+    exit 0
+fi
+
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <file or directory> [file2] [dir2] ..."
+    echo "       $0 --clear   (delete all files uploaded from your IP)"
     echo "Set BACKEND_URL env var for custom backend, e.g., export BACKEND_URL=https://yourdomain.com"
     exit 1
 fi
@@ -139,6 +146,28 @@ class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         cleanup_old_files()
         client_ip = self.client_address[0]
+        if self.path == '/clear':
+            db = load_db()
+            ip_files = db.get(client_ip, [])
+            freed_bytes = 0
+            for entry in ip_files:
+                filepath = os.path.join(UPLOAD_DIR, entry['filename'])
+                if os.path.exists(filepath):
+                    try:
+                        size = os.path.getsize(filepath)
+                    except OSError:
+                        size = 0
+                    os.remove(filepath)
+                    freed_bytes += size
+            if client_ip in db:
+                del db[client_ip]
+                save_db(db)
+            logging.info(f'Clear: IP={client_ip}, Freed={freed_bytes}')
+            self.send_response(200)
+            self.end_headers()
+            freed_mb = freed_bytes / 1024**2
+            self.wfile.write(f'Cleared files for IP {client_ip}. Freed {freed_mb:.2f} MB'.encode())
+            return
         db = load_db()
         ip_files = db.get(client_ip, [])
         content_type = self.headers.get('Content-Type', '')
