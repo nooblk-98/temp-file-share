@@ -17,15 +17,14 @@ A simple backend service for uploading files and folders, storing them locally, 
 
 ## Quick Start
 
-Download and use the upload script from your backend:
+Download and use the upload script from your backend in one line:
 
 ```bash
-wget https://dl.itsnooblk.com/upload.sh
-chmod +x upload.sh
-./upload.sh filename.zip
+wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
+# Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
-Or set custom backend: `export BACKEND_URL=https://dl.itsnooblk.com && ./upload.sh filename.zip`
+Or for custom backend: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
 
 ## Prerequisites
 
