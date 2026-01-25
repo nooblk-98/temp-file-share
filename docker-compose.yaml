@@ -1,0 +1,7 @@
+services:
+  backend:
+    build: ./backend
+    # ports:
+    #   - "8000:8000"
+    volumes:
+      - /opt/temp-file-share/uploads:/app/uploads
