@@ -4,5 +4,5 @@
   "MAX_AGE_HOURS": 5,
   "IP_LIMIT_GB": 10,
   "FILES_DB": "files_db.json",
-  "TRUST_PROXY": false
+  "TRUST_PROXY": true
 }
