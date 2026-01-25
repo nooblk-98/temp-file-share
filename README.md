@@ -47,14 +47,6 @@ chmod +x upload.sh
 ./upload.sh files
 ```
 
-## API
-
-- `GET /`: Main page with usage guide
-- `GET /upload.sh`: Download the bash upload script (Linux/macOS)
-- `POST /upload`: Upload a file (multipart/form-data with 'file' field)
-- `POST /clear`: Delete all files uploaded from the current IP
-- `GET /download/<filename>`: Download the uploaded file
-
 ## Notes
 
 - Folders and multiple files are auto-zipped before upload.
