@@ -8,7 +8,7 @@ Upload files and folders from your terminal and get a download link.
 - Download link returned after upload
 - Files expire automatically
 - Per-IP storage limits
-- Recent uploads shown on homepage
+- Homepage shows all stored files with upload and expiry time
 - Basic per-IP upload cooldown
 
 ## Quick Start (Linux/macOS)
