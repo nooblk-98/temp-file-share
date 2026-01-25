@@ -65,11 +65,11 @@ INDEX_HTML = '''<!DOCTYPE html>
     <h1>File Upload Service</h1>
     <p>Upload files and folders easily from your terminal.</p>
     
-    <h2>Storage Usage</h2>
+    <h2>💾 Storage Usage</h2>
     <div class="storage-bar">
-        <div class="storage-used" style="width: {percentage:.1f}%;"></div>
+        <div class="storage-used" style="width: {percentage:.1f}%; background: linear-gradient(to right, #4caf50, #ff9800, #f44336);"></div>
     </div>
-    <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated</div>
+    <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated ({percentage:.1f}%)</div>
     
     <div class="limits">
         <strong>Limits:</strong> Files expire after {max_age_hours} hours. Per-IP limit: {ip_limit_gb:.2f} GB.
