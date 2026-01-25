@@ -112,7 +112,7 @@ def get_recent_uploads(limit=5):
     all_files.sort(key=lambda x: x.get('time', 0), reverse=True)
     recent = all_files[:limit]
     if not recent:
-        return '<li>No uploads yet</li>'
+        return '<tr><td colspan="5">No uploads yet</td></tr>'
     items = []
     for entry in recent:
         filename = entry.get('filename', 'unknown')
@@ -122,10 +122,15 @@ def get_recent_uploads(limit=5):
         ts = entry.get('time', 0)
         ts_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
         ip_value = entry.get('ip', 'unknown')
-        country = get_country_display(ip_value)
+        country_html = get_country_display(ip_value)
         items.append(
-            f'<li><a href="/download/{safe_name}">{escape(display_name)}</a> '
-            f'({size_mb:.2f} MB) - {ts_str} - {escape(ip_value)} {country}</li>'
+            '<tr>'
+            f'<td><a href="/download/{safe_name}">{escape(display_name)}</a></td>'
+            f'<td>{size_mb:.2f} MB</td>'
+            f'<td>{ts_str}</td>'
+            f'<td>{escape(ip_value)}</td>'
+            f'<td>{country_html}</td>'
+            '</tr>'
         )
     return ''.join(items)
 
@@ -143,7 +148,7 @@ def get_country_display(ip_value):
     if not ip_value:
         return ''
     if is_private_ip(ip_value):
-        return '(LAN)'
+        return 'LAN'
     cached = _geo_cache.get(ip_value)
     if cached is not None:
         return cached
@@ -152,7 +157,7 @@ def get_country_display(ip_value):
         _geo_cache[ip_value] = ''
         return ''
     flag = country_code_to_flag(code)
-    text = f'({code.upper()} {flag})' if flag else f'({code.upper()})'
+    text = f'{code.upper()} {flag}' if flag else f'{code.upper()}'
     _geo_cache[ip_value] = text
     return text
 
@@ -172,8 +177,8 @@ def lookup_country_code(ip_value):
 def country_code_to_flag(code):
     if not code or len(code) != 2:
         return ''
-    base = 127397
-    return chr(base + ord(code[0].upper())) + chr(base + ord(code[1].upper()))
+    code_lower = code.lower()
+    return f'<img class="flag-img" src="https://flagcdn.com/w20/{code_lower}.png" alt="{code.upper()} flag">'
 
 
 def start_cleanup_thread():

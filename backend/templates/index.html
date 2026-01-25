@@ -21,9 +21,20 @@
     </div>
 
     <h2>Recent Uploads</h2>
-    <ul class="recent-list">
-        {recent_uploads_html}
-    </ul>
+    <table class="recent-table">
+        <thead>
+            <tr>
+                <th>File</th>
+                <th>Size</th>
+                <th>Time</th>
+                <th>IP</th>
+                <th>Country</th>
+            </tr>
+        </thead>
+        <tbody>
+            {recent_uploads_html}
+        </tbody>
+    </table>
 
     <h2>Quick Start (Linux/macOS)</h2>
     <p>One line install + upload:</p>
