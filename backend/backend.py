@@ -91,7 +91,7 @@ INDEX_HTML = '''<!DOCTYPE html>
     </ul>
     
     <footer style="margin-top: 40px; text-align: center; font-size: 12px; color: #666;">
-        Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a> | Powered by OpenCode
+        Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a> | Powered by python
     </footer>
 </body>
 </html>
