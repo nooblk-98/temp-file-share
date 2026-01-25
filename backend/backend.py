@@ -59,7 +59,7 @@ if ($args.Count -eq 0) {
     exit 1
 }
 
-$tempZip = "$env:TEMP\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
+$tempZip = "$env:TEMP\\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
 Compress-Archive -Path $args -DestinationPath $tempZip -Force
 
 try {
