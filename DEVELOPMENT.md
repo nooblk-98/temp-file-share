@@ -32,6 +32,7 @@ Key settings:
 - `MAX_AGE_HOURS`: file expiration time
 - `IP_LIMIT_GB`: per-IP storage limit
 - `FILES_DB`: JSON database path
+ - `TRUST_PROXY`: use real client IP from proxy headers (Cloudflare)
 Note: per-uploader limits are keyed by IP.
 
 ## File Storage
