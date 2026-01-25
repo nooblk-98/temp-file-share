@@ -1,6 +1,6 @@
 # File Upload Backend
 
-A simple backend service for uploading files and folders, storing them locally, and providing download URLs.
+A simple service for uploading files and folders, storing them locally, and providing download URLs.
 
 ## Features
 
@@ -34,36 +34,7 @@ curl -s -X POST https://dl.itsnooblk.com/clear
 Or set custom backend:
 - Linux/macOS: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
 
-
-## Prerequisites
-
-- Docker and Docker Compose installed (for local deployment)
-- Bash shell (for upload.sh)
-- For public deployment, a server with domain like dl.itsnooblk.com
-
-## Deployment
-
-For local: Use Docker Compose as below.
-
-For public: Deploy the backend to a server (e.g., using Docker on VPS), point domain to it, and set BACKEND_URL.
-
-## Running the Application
-
-1. Start the backend server:
-   ```bash
-   docker-compose up --build
-   ```
-
-2. Upload using the script:
-   ```bash
-   ./upload.sh file1.txt folder1
-   ```
-
-Or set custom backend: `export BACKEND_URL=https://dl.itsnooblk.com && ./upload.sh file1.txt`
-
-The script will show progress and output download URL, file size, expiration, and storage info.
-
-## API
+The script will show progress and output the download URL, file size, expiration, and storage info.
 
 ## API
 
@@ -82,15 +53,7 @@ The script will show progress and output download URL, file size, expiration, an
 - Logs are saved in `backend/logs.log`.
 - No authentication implemented.
 
-## Structure
+## More Docs
 
-- `backend/`: Contains the Python backend server
-  - `backend.py`: The main server script
-  - `index.html`: Template for the main page
-  - `config.json`: Configuration file for limits
-  - `Dockerfile`: Docker image definition
-  - `uploads/`: Directory where uploaded files are stored (created at runtime)
-  - `files_db.json`: JSON database tracking files per IP
-  - `logs.log`: Log file for uploads and downloads
-- `upload.sh`: Bash script to upload files or folders
-- `docker-compose.yml`: Docker Compose configuration to run the backend
+- Development guide: `DEVELOPMENT.md`
+- Contribution guide: `CONTRIBUTING.md`
