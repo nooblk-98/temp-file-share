@@ -1,0 +1,57 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>File Upload Service</title>
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <h1>File Upload Service</h1>
+    <p>Upload files and folders from your terminal in seconds.</p>
+
+    <h2>Storage Usage</h2>
+    <div class="storage-bar">
+        <div class="storage-used" style="width: {percentage:.1f}%;"></div>
+    </div>
+    <div class="storage-text">{used_gb:.2f} GB used of {total_gb:.2f} GB allocated ({percentage:.1f}%)</div>
+
+    <div class="limits">
+        <strong>Limits:</strong> Files expire after {max_age_hours} hours. Per-IP limit: {ip_limit_gb:.2f} GB.
+    </div>
+
+    <h2>Recent Uploads</h2>
+    <ul class="recent-list">
+        {recent_uploads_html}
+    </ul>
+
+    <h2>Quick Start (Linux/macOS)</h2>
+    <p>One line install + upload:</p>
+    <div class="code-block">
+        <button class="copy-btn" data-copy>Copy</button>
+        <pre><code>wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    </div>
+
+    <h3>Clear Your Files (Same IP)</h3>
+    <p>Delete everything you uploaded from your current IP (one line):</p>
+    <div class="code-block">
+        <button class="copy-btn" data-copy>Copy</button>
+        <pre><code>curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear</code></pre>
+    </div>
+
+    <h2>Features</h2>
+    <ul>
+        <li>Automatic zipping of folders and multiple files</li>
+        <li>File expiration after {max_age_hours} hours</li>
+        <li>Per-IP storage limits ({ip_limit_gb:.2f} GB)</li>
+        <li>Progress bars for uploads</li>
+        <li>Direct download links</li>
+    </ul>
+
+    <footer>
+        Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

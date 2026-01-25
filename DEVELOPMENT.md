@@ -50,5 +50,5 @@ Note: per-uploader limits are keyed by IP.
 
 ## Troubleshooting
 
-- If you change `backend/index.html` or `backend/backend.py`, rebuild the image.
+- If you change `backend/templates/index.html`, `backend/static/styles.css`, or `backend/backend.py`, rebuild the image.
 - If storage limits seem wrong, verify `backend/config.json` is mounted/copied.
