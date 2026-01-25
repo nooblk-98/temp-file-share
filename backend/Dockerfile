@@ -2,7 +2,7 @@ FROM python:3.9-slim
 
 WORKDIR /app
 
-COPY backend.py config.json .
+COPY backend.py config.json index.html .
 
 RUN mkdir uploads
 
