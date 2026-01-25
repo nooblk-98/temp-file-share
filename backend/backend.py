@@ -45,7 +45,7 @@ echo "$url"
 rm "$temp_zip"
 '''
 
-UPLOAD_PS1 = '''param(
+UPLOAD_PS1 = r'''param(
     [string]$BackendUrl = "https://dl.itsnooblk.com"
 )
 
