@@ -24,7 +24,7 @@ FILES_DB = config['FILES_DB']
 
 UPLOAD_SCRIPT = '''#!/bin/bash
 
-BACKEND_URL=${BACKEND_URL:-http://localhost:8000}
+BACKEND_URL=${BACKEND_URL:-https://dl.itsnooblk.com}
 
 if [ $# -eq 0 ]; then
     echo "Usage: $0 <file or directory> [file2] [dir2] ..."
@@ -142,7 +142,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         ip_remaining = IP_LIMIT_GB * 1024**3 - sum(f['size'] for f in ip_files)
         expire_time = time.time() + MAX_AGE_SECONDS
         expire_str = datetime.datetime.fromtimestamp(expire_time).strftime('%Y-%m-%d %H:%M:%S')
-        response = f'http://localhost:{PORT}/download/{filename}\nFile size: {file_size / 1024**2:.2f} MB\nExpires: {expire_str}\nDisk space left: {disk_free / 1024**3:.2f} GB\nAllocated space remaining: {allocated_remaining / 1024**3:.2f} GB\nIP limit remaining: {ip_remaining / 1024**3:.2f} GB'
+        response = f'https://dl.itsnooblk.com/download/{filename}\nFile size: {file_size / 1024**2:.2f} MB\nExpires: {expire_str}\nDisk space left: {disk_free / 1024**3:.2f} GB\nAllocated space remaining: {allocated_remaining / 1024**3:.2f} GB\nIP limit remaining: {ip_remaining / 1024**3:.2f} GB'
         self.send_response(200)
         self.end_headers()
         self.wfile.write(response.encode())
