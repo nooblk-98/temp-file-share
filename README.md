@@ -2,6 +2,8 @@
 
 Upload files and folders from your terminal and get a download link.
 
+![UI Screenshot](images/ui.png)
+
 ## Features
 
 - Upload files and folders (auto-zipped)
@@ -16,6 +18,17 @@ Upload files and folders from your terminal and get a download link.
 One line install + upload:
 ```bash
 wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
+```
+
+Sample output:
+```text
+https://dl.itsnooblk.com/download/a64c76df94664379815186a6cf9c55e7_upload_1769362635.tar.gz
+Your IP: 80.225.221.245
+File size: 0.03 MB
+Expires: 2026-01-25 22:37:16
+Disk space left: 117.48 GB
+Allocated space remaining: 50.00 GB
+IP limit remaining: 10.00 GB
 ```
 
 ## Clear Your Files (Same IP)
