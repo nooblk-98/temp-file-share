@@ -49,6 +49,7 @@ chmod +x upload.sh
 - Expired files are cleaned up automatically.
 - Limits apply per IP.
 - If you hit the IP limit, run `./upload.sh --clear` and try again.
+- The server uses `X-Real-IP` or `X-Forwarded-For` if provided by a reverse proxy; otherwise it uses the direct client IP.
 
 ## Configuration
 

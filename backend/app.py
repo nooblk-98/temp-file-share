@@ -12,6 +12,7 @@ import datetime
 import logging
 import threading
 from html import escape
+import ipaddress
 
 PORT = 54000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -83,6 +84,20 @@ def get_current_used():
         if os.path.isfile(os.path.join(UPLOAD_DIR, f))
     )
 
+def get_client_ip(handler):
+    x_real_ip = handler.headers.get('X-Real-IP')
+    if x_real_ip:
+        return x_real_ip.strip()
+    xff = handler.headers.get('X-Forwarded-For')
+    if xff:
+        return xff.split(',')[0].strip()
+    return handler.client_address[0]
+
+def is_private_ip(ip_value):
+    try:
+        return ipaddress.ip_address(ip_value).is_private
+    except ValueError:
+        return False
 
 def get_recent_uploads(limit=5):
     db = load_db()
@@ -123,7 +138,7 @@ last_upload_time = {}
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         cleanup_old_files()
-        client_ip = self.client_address[0]
+        client_ip = get_client_ip(self)
 
         if self.path not in ('/upload', '/clear'):
             self.send_error(404)
@@ -274,7 +289,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             filename = self.path[len('/download/') :].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(filepath):
-                logging.info(f'Download: IP={self.client_address[0]}, File={filename}')
+                logging.info(f'Download: IP={get_client_ip(self)}, File={filename}')
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/octet-stream')
                 self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
