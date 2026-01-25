@@ -47,47 +47,6 @@ echo "$url"
 rm "$temp_zip"
 '''
 
-UPLOAD_PS1 = r'''param(
-    [string]$BackendUrl = "https://dl.itsnooblk.com",
-    [Parameter(ValueFromRemainingArguments = $true)]
-    [string[]]$Paths
-)
-
-if ($env:BACKEND_URL) {
-    $BackendUrl = $env:BACKEND_URL
-}
-
-if (-not $Paths -or $Paths.Count -eq 0) {
-    Write-Host "Usage: .\upload.ps1 <file or directory> [file2] [dir2] ..."
-    Write-Host "Set BACKEND_URL env var for custom backend, e.g., `$env:BACKEND_URL='https://yourdomain.com'"
-    exit 1
-}
-
-$tempZip = "$env:TEMP\\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
-Compress-Archive -Path $Paths -DestinationPath $tempZip -Force
-
-try {
-    Add-Type -AssemblyName System.Net.Http
-    $client = New-Object System.Net.Http.HttpClient
-    $content = New-Object System.Net.Http.MultipartFormDataContent
-    $fileStream = [System.IO.File]::OpenRead($tempZip)
-    $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
-    $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("application/octet-stream")
-    $content.Add($fileContent, "file", [System.IO.Path]::GetFileName($tempZip))
-    $response = $client.PostAsync("$BackendUrl/upload", $content).Result
-    $response.EnsureSuccessStatusCode() | Out-Null
-    $respBody = $response.Content.ReadAsStringAsync().Result
-    Write-Host $respBody
-} catch {
-    Write-Host "Upload failed: $($_.Exception.Message)"
-} finally {
-    if ($fileStream) { $fileStream.Dispose() }
-    if ($client) { $client.Dispose() }
-}
-
-Remove-Item $tempZip -ErrorAction SilentlyContinue
-'''
-
 INDEX_HTML = '''<!DOCTYPE html>
 <html lang="en">
 <head>
@@ -264,12 +223,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')
             self.end_headers()
             self.wfile.write(UPLOAD_SCRIPT.encode())
-        elif self.path == '/upload.ps1':
-            self.send_response(200)
-            self.send_header('Content-Type', 'text/plain')
-            self.send_header('Content-Disposition', 'attachment; filename="upload.ps1"')
-            self.end_headers()
-            self.wfile.write(UPLOAD_PS1.encode())
         elif self.path.startswith('/download/'):
             filename = self.path[len('/download/'):].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)

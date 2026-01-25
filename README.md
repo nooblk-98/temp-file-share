@@ -25,15 +25,8 @@ wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh &&
 # Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
-**Windows (CMD):**
-```cmd
-powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri https://dl.itsnooblk.com/upload.ps1 -OutFile upload.ps1"
-powershell -NoProfile -ExecutionPolicy Bypass -File .\upload.ps1 filename.zip folder
-```
-
 Or set custom backend:
 - Linux/macOS: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
-- Windows (CMD): `set BACKEND_URL=https://yourdomain.com`
 
 
 ## Prerequisites
@@ -70,7 +63,6 @@ The script will show progress and output download URL, file size, expiration, an
 
 - `GET /`: Main page with usage guide
 - `GET /upload.sh`: Download the bash upload script (Linux/macOS)
-- `GET /upload.ps1`: Download the Windows upload script (run from CMD)
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
 - `GET /download/<filename>`: Download the uploaded file
 
