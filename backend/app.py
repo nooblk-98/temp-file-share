@@ -13,6 +13,8 @@ import logging
 import threading
 from html import escape
 import ipaddress
+import urllib.request
+import urllib.error
 
 PORT = 54000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -102,8 +104,11 @@ def is_private_ip(ip_value):
 def get_recent_uploads(limit=5):
     db = load_db()
     all_files = []
-    for files in db.values():
-        all_files.extend(files)
+    for ip, files in db.items():
+        for entry in files:
+            entry_copy = dict(entry)
+            entry_copy['ip'] = ip
+            all_files.append(entry_copy)
     all_files.sort(key=lambda x: x.get('time', 0), reverse=True)
     recent = all_files[:limit]
     if not recent:
@@ -112,14 +117,63 @@ def get_recent_uploads(limit=5):
     for entry in recent:
         filename = entry.get('filename', 'unknown')
         safe_name = escape(filename)
+        display_name = clean_display_name(filename)
         size_mb = entry.get('size', 0) / 1024**2
         ts = entry.get('time', 0)
         ts_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        ip_value = entry.get('ip', 'unknown')
+        country = get_country_display(ip_value)
         items.append(
-            f'<li><a href="/download/{safe_name}">{safe_name}</a> '
-            f'({size_mb:.2f} MB) - {ts_str}</li>'
+            f'<li><a href="/download/{safe_name}">{escape(display_name)}</a> '
+            f'({size_mb:.2f} MB) - {ts_str} - {escape(ip_value)} {country}</li>'
         )
     return ''.join(items)
+
+
+def clean_display_name(filename):
+    if len(filename) > 33 and filename[32] == '_' and all(c in '0123456789abcdef' for c in filename[:32]):
+        return filename[33:]
+    return filename
+
+
+_geo_cache = {}
+
+
+def get_country_display(ip_value):
+    if not ip_value:
+        return ''
+    if is_private_ip(ip_value):
+        return '(LAN)'
+    cached = _geo_cache.get(ip_value)
+    if cached is not None:
+        return cached
+    code = lookup_country_code(ip_value)
+    if not code:
+        _geo_cache[ip_value] = ''
+        return ''
+    flag = country_code_to_flag(code)
+    text = f'({code.upper()} {flag})' if flag else f'({code.upper()})'
+    _geo_cache[ip_value] = text
+    return text
+
+
+def lookup_country_code(ip_value):
+    url = f'http://ip-api.com/json/{ip_value}?fields=status,countryCode'
+    try:
+        with urllib.request.urlopen(url, timeout=1.5) as resp:
+            data = json.loads(resp.read().decode('utf-8'))
+        if data.get('status') == 'success':
+            return data.get('countryCode')
+    except (urllib.error.URLError, ValueError, TimeoutError):
+        return None
+    return None
+
+
+def country_code_to_flag(code):
+    if not code or len(code) != 2:
+        return ''
+    base = 127397
+    return chr(base + ord(code[0].upper())) + chr(base + ord(code[1].upper()))
 
 
 def start_cleanup_thread():
