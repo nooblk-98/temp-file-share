@@ -10,6 +10,8 @@ import shutil
 import json
 import datetime
 import logging
+import threading
+from html import escape
 
 PORT = 54000
 
@@ -23,6 +25,8 @@ MAX_STORAGE_GB = config['MAX_STORAGE_GB']
 MAX_AGE_SECONDS = config['MAX_AGE_HOURS'] * 3600
 IP_LIMIT_GB = config['IP_LIMIT_GB']
 FILES_DB = config['FILES_DB']
+RATE_LIMIT_SECONDS = config.get('RATE_LIMIT_SECONDS', 0)
+CLEANUP_INTERVAL_SECONDS = config.get('CLEANUP_INTERVAL_SECONDS', 300)
 
 UPLOAD_SCRIPT = '''#!/bin/bash
 
@@ -142,10 +146,48 @@ def cleanup_old_files():
 def get_current_used():
     return sum(os.path.getsize(os.path.join(UPLOAD_DIR, f)) for f in os.listdir(UPLOAD_DIR) if os.path.isfile(os.path.join(UPLOAD_DIR, f)))
 
+def get_recent_uploads(limit=5):
+    db = load_db()
+    all_files = []
+    for files in db.values():
+        for f in files:
+            all_files.append(f)
+    all_files.sort(key=lambda x: x.get('time', 0), reverse=True)
+    recent = all_files[:limit]
+    if not recent:
+        return '<li>No uploads yet</li>'
+    items = []
+    for f in recent:
+        filename = f.get('filename', 'unknown')
+        safe_name = escape(filename)
+        size_mb = f.get('size', 0) / 1024**2
+        ts = f.get('time', 0)
+        ts_str = datetime.datetime.fromtimestamp(ts).strftime('%Y-%m-%d %H:%M:%S')
+        items.append(
+            f'<li><a href="https://dl.itsnooblk.com/download/{safe_name}">{safe_name}</a> '
+            f'({size_mb:.2f} MB) — {ts_str}</li>'
+        )
+    return ''.join(items)
+
+def start_cleanup_thread():
+    def _loop():
+        while True:
+            time.sleep(CLEANUP_INTERVAL_SECONDS)
+            cleanup_old_files()
+    t = threading.Thread(target=_loop, daemon=True)
+    t.start()
+
+last_upload_time = {}
+
 class Handler(http.server.BaseHTTPRequestHandler):
     def do_POST(self):
         cleanup_old_files()
         client_ip = self.client_address[0]
+        if RATE_LIMIT_SECONDS and self.path == '/upload':
+            last_time = last_upload_time.get(client_ip, 0)
+            if time.time() - last_time < RATE_LIMIT_SECONDS:
+                self.send_error(429, f"Rate limit: wait {RATE_LIMIT_SECONDS} seconds between uploads.")
+                return
         if self.path == '/clear':
             db = load_db()
             ip_files = db.get(client_ip, [])
@@ -207,6 +249,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         ip_files.append({'filename': filename, 'size': file_size, 'time': time.time()})
         db[client_ip] = ip_files
         save_db(db)
+        last_upload_time[client_ip] = time.time()
         logging.info(f'Upload: IP={client_ip}, File={filename}, Size={file_size}')
         disk_free = shutil.disk_usage(UPLOAD_DIR).free
         allocated_remaining = MAX_STORAGE_GB * 1024**3 - current_used - file_size
@@ -225,12 +268,14 @@ class Handler(http.server.BaseHTTPRequestHandler):
             used_gb = used_bytes / 1024**3
             total_gb = MAX_STORAGE_GB
             percentage = (used_gb / total_gb) * 100 if total_gb > 0 else 0
+            recent_uploads_html = get_recent_uploads(5)
             html = INDEX_TEMPLATE.format(
                 used_gb=used_gb, 
                 total_gb=total_gb, 
                 percentage=percentage,
                 max_age_hours=config['MAX_AGE_HOURS'],
-                ip_limit_gb=config['IP_LIMIT_GB']
+                ip_limit_gb=config['IP_LIMIT_GB'],
+                recent_uploads_html=recent_uploads_html
             )
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
@@ -259,5 +304,6 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_error(404)
 
 with socketserver.TCPServer(("", PORT), Handler) as httpd:
+    start_cleanup_thread()
     print(f"Serving on port {PORT}")
     httpd.serve_forever()

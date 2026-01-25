@@ -8,6 +8,8 @@ Upload files and folders from your terminal and get a download link.
 - Download link returned after upload
 - Files expire automatically
 - Per-IP storage limits
+- Recent uploads shown on homepage
+- Basic per-IP upload cooldown
 
 ## Quick Start (Linux/macOS)
 
@@ -47,6 +49,12 @@ chmod +x upload.sh
 - Expired files are cleaned up automatically.
 - Limits apply per IP.
 - If you hit the IP limit, run `./upload.sh --clear` and try again.
+
+## Configuration
+
+Edit `backend/config.json`:
+- `RATE_LIMIT_SECONDS`: seconds to wait between uploads from the same IP
+- `CLEANUP_INTERVAL_SECONDS`: background cleanup interval
 
 ## More Docs
 
