@@ -15,6 +15,16 @@ A simple backend service for uploading files and folders, storing them locally, 
 - Progress bars for uploads in CLI
 - Multi-file/folder uploads in a single zip
 
+## Direct Upload Commands
+
+You can upload files directly using curl without the script:
+
+- Single file: `curl -F "file=@path/to/file" http://localhost:8000/upload`
+- Folder (zip first): `tar -czf archive.tar.gz folder && curl -F "file=@archive.tar.gz" http://localhost:8000/upload`
+- Multiple files/folders: `tar -czf archive.tar.gz file1 folder1 file2 && curl -F "file=@archive.tar.gz" http://localhost:8000/upload`
+
+Use `wget` for downloads: `wget http://localhost:8000/download/filename`
+
 ## Running the Application
 
 1. Start the backend server:
@@ -22,12 +32,7 @@ A simple backend service for uploading files and folders, storing them locally, 
    docker-compose up --build
    ```
 
-2. In another terminal, upload files or folders:
-   ```bash
-   ./upload.sh file1.txt folder1 file2.jpg
-   ```
-
-The script will show progress and output download URL, file size, expiration, and storage info.
+2. Upload using the script or direct commands above.
 
 ## API
 
