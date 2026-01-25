@@ -17,8 +17,6 @@ A simple backend service for uploading files and folders, storing them locally, 
 
 ## Quick Start
 
-## Quick Start
-
 Download and use the upload script from your backend in one line:
 
 **Linux/macOS:**
@@ -27,12 +25,15 @@ wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh &&
 # Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
-**Windows (CMD or PowerShell):**
+**Windows (CMD):**
 ```cmd
-powershell -Command "Invoke-WebRequest -Uri https://dl.itsnooblk.com/upload.ps1 -OutFile upload.ps1; .\upload.ps1 filename.zip folder/"
+powershell -NoProfile -ExecutionPolicy Bypass -Command "Invoke-WebRequest -Uri https://dl.itsnooblk.com/upload.ps1 -OutFile upload.ps1"
+powershell -NoProfile -ExecutionPolicy Bypass -File .\upload.ps1 filename.zip folder
 ```
 
-Or set custom backend: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
+Or set custom backend:
+- Linux/macOS: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
+- Windows (CMD): `set BACKEND_URL=https://yourdomain.com`
 
 
 ## Prerequisites
@@ -69,7 +70,7 @@ The script will show progress and output download URL, file size, expiration, an
 
 - `GET /`: Main page with usage guide
 - `GET /upload.sh`: Download the bash upload script (Linux/macOS)
-- `GET /upload.ps1`: Download the PowerShell upload script (Windows)
+- `GET /upload.ps1`: Download the Windows upload script (run from CMD)
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
 - `GET /download/<filename>`: Download the uploaded file
 
@@ -94,4 +95,3 @@ The script will show progress and output download URL, file size, expiration, an
   - `logs.log`: Log file for uploads and downloads
 - `upload.sh`: Bash script to upload files or folders
 - `docker-compose.yml`: Docker Compose configuration to run the backend
-
