@@ -32,6 +32,7 @@ Key settings:
 - `MAX_AGE_HOURS`: file expiration time
 - `IP_LIMIT_GB`: per-IP storage limit
 - `FILES_DB`: JSON database path
+- `TRUST_PROXY`: trust reverse proxy headers (enable for Cloudflare)
 
 ## File Storage
 
