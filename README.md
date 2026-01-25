@@ -21,10 +21,15 @@ Download and use the upload script from your backend in one line:
 
 ```bash
 wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
-# Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
+
 ```
 
-Or for custom backend: `export BACKEND_URL=https://yourdomain.com && wget -q $BACKEND_URL/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh files`
+with curl
+
+```bash
+curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
+```
+
 
 ## Prerequisites
 
