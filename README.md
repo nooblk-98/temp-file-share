@@ -25,10 +25,16 @@ wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh &&
 # Or with curl: curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
-Clear all files uploaded from your current IP:
+Clear all files uploaded with your token:
 ```bash
-curl -s -X POST https://dl.itsnooblk.com/clear
+curl -s -X POST -H "X-Upload-Token: <your-token>" https://dl.itsnooblk.com/clear
 # Or: ./upload.sh --clear
+```
+
+Check your token usage:
+```bash
+curl -s -H "X-Upload-Token: <your-token>" https://dl.itsnooblk.com/token
+# Or: ./upload.sh --check
 ```
 
 Or set custom backend:
@@ -41,7 +47,8 @@ The script will show progress and output the download URL, file size, expiration
 - `GET /`: Main page with usage guide
 - `GET /upload.sh`: Download the bash upload script (Linux/macOS)
 - `POST /upload`: Upload a file (multipart/form-data with 'file' field)
-- `POST /clear`: Delete all files uploaded from the current IP
+- `GET /token`: Show token usage (`X-Upload-Token`)
+- `POST /clear`: Delete all files uploaded with your token (`X-Upload-Token`)
 - `GET /download/<filename>`: Download the uploaded file
 
 ## Notes
@@ -49,10 +56,10 @@ The script will show progress and output the download URL, file size, expiration
 - Folders and multiple files/folders are automatically zipped before upload.
 - Files are stored with UUID-generated names to avoid conflicts.
 - Expired files are cleaned up automatically on requests.
-- Uploads exceeding IP limits trigger automatic deletion of oldest files for that IP.
+- Uploads exceeding limits trigger automatic deletion of oldest files for that token.
 - Logs are saved in `backend/logs.log`.
 - No authentication implemented.
-- If running behind a reverse proxy, set `TRUST_PROXY` to `true` in `backend/config.json` so per-IP limits and `/clear` use the real client IP (`X-Real-IP`, `CF-Connecting-IP`, or `X-Forwarded-For`).
+- Each uploader is identified by a token returned on upload. Keep it safe; it is required to clear your files.
 
 ## More Docs
 

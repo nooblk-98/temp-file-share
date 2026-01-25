@@ -3,6 +3,5 @@
   "MAX_STORAGE_GB": 50,
   "MAX_AGE_HOURS": 5,
   "IP_LIMIT_GB": 10,
-  "FILES_DB": "files_db.json",
-  "TRUST_PROXY": false
+  "FILES_DB": "files_db.json"
 }

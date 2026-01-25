@@ -32,17 +32,23 @@
     <p>Download the upload script and use it:</p>
     <p><strong>Linux/macOS:</strong></p>
     <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
+    <p>After upload, your token is printed and saved locally.</p>
 
-    <h3>Clear Your Files (Same IP)</h3>
-    <p>Delete all files you uploaded from your current IP:</p>
-    <pre><code class="command">curl -s -X POST https://dl.itsnooblk.com/clear</code></pre>
-    <p>Or using the script:</p>
+    <h3>Clear Your Files (Token)</h3>
+    <p>Delete all files you uploaded using your token:</p>
+    <pre><code class="command">curl -s -X POST -H "X-Upload-Token: &lt;your-token&gt;" https://dl.itsnooblk.com/clear</code></pre>
+    <p>Or using the script (it saves the token locally):</p>
     <pre><code class="command">./upload.sh --clear</code></pre>
+    <h3>Check Token Usage</h3>
+    <p>Show how much space your token is using:</p>
+    <pre><code class="command">curl -s -H "X-Upload-Token: &lt;your-token&gt;" https://dl.itsnooblk.com/token</code></pre>
+    <p>Or using the script:</p>
+    <pre><code class="command">./upload.sh --check</code></pre>
     <h2>Features</h2>
     <ul>
         <li>Automatic zipping of folders and multiple files</li>
         <li>File expiration after {max_age_hours} hours</li>
-        <li>Per-IP storage limits ({ip_limit_gb:.2f} GB)</li>
+        <li>Per-token storage limits ({ip_limit_gb:.2f} GB)</li>
         <li>Progress bars for uploads</li>
         <li>Direct download links</li>
     </ul>

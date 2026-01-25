@@ -32,7 +32,7 @@ Key settings:
 - `MAX_AGE_HOURS`: file expiration time
 - `IP_LIMIT_GB`: per-IP storage limit
 - `FILES_DB`: JSON database path
-- `TRUST_PROXY`: trust reverse proxy headers (X-Real-IP, CF-Connecting-IP, X-Forwarded-For)
+Note: per-uploader limits are keyed by upload token (not IP).
 
 ## File Storage
 
@@ -45,7 +45,8 @@ Key settings:
 - `GET /`: Main page
 - `GET /upload.sh`: Download upload script
 - `POST /upload`: Upload a file (multipart/form-data with `file` field)
-- `POST /clear`: Delete all files uploaded from the current IP
+- `GET /token`: Show token usage (`X-Upload-Token`)
+- `POST /clear`: Delete all files uploaded with your token (`X-Upload-Token`)
 - `GET /download/<filename>`: Download uploaded file
 
 ## Troubleshooting
