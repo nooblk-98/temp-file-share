@@ -1,0 +1,7 @@
+{
+  "UPLOAD_DIR": "uploads",
+  "MAX_STORAGE_GB": 50,
+  "MAX_AGE_HOURS": 5,
+  "IP_LIMIT_GB": 5,
+  "FILES_DB": "files_db.json"
+}
