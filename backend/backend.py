@@ -67,10 +67,22 @@ $tempZip = "$env:TEMP\\upload_$(Get-Date -Format 'yyyyMMddHHmmss').zip"
 Compress-Archive -Path $Paths -DestinationPath $tempZip -Force
 
 try {
-    $response = Invoke-WebRequest -Uri "$BackendUrl/upload" -Method Post -Form @{ file = Get-Item $tempZip } -UseBasicParsing
-    Write-Host $response.Content
+    Add-Type -AssemblyName System.Net.Http
+    $client = New-Object System.Net.Http.HttpClient
+    $content = New-Object System.Net.Http.MultipartFormDataContent
+    $fileStream = [System.IO.File]::OpenRead($tempZip)
+    $fileContent = New-Object System.Net.Http.StreamContent($fileStream)
+    $fileContent.Headers.ContentType = [System.Net.Http.Headers.MediaTypeHeaderValue]::Parse("application/octet-stream")
+    $content.Add($fileContent, "file", [System.IO.Path]::GetFileName($tempZip))
+    $response = $client.PostAsync("$BackendUrl/upload", $content).Result
+    $response.EnsureSuccessStatusCode() | Out-Null
+    $respBody = $response.Content.ReadAsStringAsync().Result
+    Write-Host $respBody
 } catch {
     Write-Host "Upload failed: $($_.Exception.Message)"
+} finally {
+    if ($fileStream) { $fileStream.Dispose() }
+    if ($client) { $client.Dispose() }
 }
 
 Remove-Item $tempZip -ErrorAction SilentlyContinue
