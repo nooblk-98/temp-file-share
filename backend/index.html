@@ -29,18 +29,12 @@
     </div>
     
     <h2>Quick Start (Linux/macOS)</h2>
-    <p>1) Download the upload script:</p>
-    <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh</code></pre>
-    <p>2) Make it executable:</p>
-    <pre><code class="command">chmod +x upload.sh</code></pre>
-    <p>3) Upload a file or folder:</p>
-    <pre><code class="command">./upload.sh filename.zip folder/</code></pre>
+    <p>One line install + upload:</p>
+    <pre><code class="command">wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/</code></pre>
 
     <h3>Clear Your Files (Same IP)</h3>
-    <p>Delete everything you uploaded from your current IP:</p>
-    <pre><code class="command">./upload.sh --clear</code></pre>
-    <p>Or with curl:</p>
-    <pre><code class="command">curl -s -X POST https://dl.itsnooblk.com/clear</code></pre>
+    <p>Delete everything you uploaded from your current IP (one line):</p>
+    <pre><code class="command">curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear</code></pre>
     <h2>Features</h2>
     <ul>
         <li>Automatic zipping of folders and multiple files</li>

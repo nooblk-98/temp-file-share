@@ -11,31 +11,16 @@ Upload files and folders from your terminal and get a download link.
 
 ## Quick Start (Linux/macOS)
 
-1) Download the script:
+One line install + upload:
 ```bash
-wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh
-```
-
-2) Make it executable:
-```bash
-chmod +x upload.sh
-```
-
-3) Upload a file or folder:
-```bash
-./upload.sh filename.zip folder/
+wget -q https://dl.itsnooblk.com/upload.sh -O upload.sh && chmod +x upload.sh && ./upload.sh filename.zip folder/
 ```
 
 ## Clear Your Files (Same IP)
 
-Delete everything you uploaded from your current IP:
+Delete everything you uploaded from your current IP (one line):
 ```bash
-./upload.sh --clear
-```
-
-Or with curl:
-```bash
-curl -s -X POST https://dl.itsnooblk.com/clear
+curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear
 ```
 
 ## Custom Backend
