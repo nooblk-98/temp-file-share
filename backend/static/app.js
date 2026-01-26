@@ -86,7 +86,7 @@ const renderUploads = () => {
     uploadList.innerHTML = '';
     uploadItems.forEach((item) => {
         const wrapper = document.createElement('div');
-        wrapper.className = 'upload-item';
+        wrapper.className = `upload-item${item.error ? ' is-error' : ''}`;
         wrapper.dataset.id = item.id;
 
         const header = document.createElement('div');
@@ -134,6 +134,7 @@ const updateItem = (id, updates) => {
     Object.assign(item, updates);
     const itemEl = uploadList?.querySelector(`.upload-item[data-id="${id}"]`);
     if (itemEl) {
+        itemEl.classList.toggle('is-error', Boolean(item.error));
         const meta = itemEl.querySelector('.upload-meta');
         if (meta) meta.textContent = `${formatBytes(item.file.size)} · ${item.status}`;
         const bar = itemEl.querySelector('.upload-progress-bar');
@@ -200,17 +201,17 @@ const uploadSingle = (item) => new Promise((resolve) => {
         if (xhr.status === 200) {
             const lines = xhr.responseText.trim().split('\n');
             const link = lines[0] || '';
-            updateItem(item.id, { progress: 100, status: 'Uploaded', link });
+            updateItem(item.id, { progress: 100, status: 'Uploaded', link, error: false });
         } else {
             const message = extractErrorMessage(xhr);
-            updateItem(item.id, { status: message, progress: 100 });
+            updateItem(item.id, { status: message, progress: 0, error: true });
             setStatus(message, true);
         }
         resolve();
     });
 
     xhr.addEventListener('error', () => {
-        updateItem(item.id, { status: 'Upload failed', progress: 100 });
+        updateItem(item.id, { status: 'Upload failed', progress: 0, error: true });
         setStatus('Upload failed. Please try again.', true);
         resolve();
     });

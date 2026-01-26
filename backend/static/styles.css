@@ -332,6 +332,14 @@ footer {
     transition: width 0.2s ease;
 }
 
+.upload-item.is-error .upload-progress-bar {
+    background: linear-gradient(90deg, #b71c1c, #d32f2f);
+}
+
+.upload-item.is-error .upload-meta {
+    color: #b71c1c;
+}
+
 .upload-status {
     font-size: 13px;
     color: var(--muted);
