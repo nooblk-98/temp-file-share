@@ -261,6 +261,23 @@ footer {
     color: var(--muted);
 }
 
+.ip-usage {
+    margin-top: 10px;
+}
+
+.ip-usage-header {
+    display: flex;
+    justify-content: space-between;
+    gap: 12px;
+    font-size: 12px;
+    color: var(--muted);
+    margin-bottom: 6px;
+}
+
+.ip-usage-bar {
+    height: 10px;
+}
+
 .upload-btn,
 .clear-btn {
     border: 1px solid var(--border);

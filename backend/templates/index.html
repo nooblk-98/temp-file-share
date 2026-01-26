@@ -46,6 +46,15 @@
             <div><strong>Per-IP limit:</strong> {ip_limit_gb:.2f} GB</div>
             <div><strong>File expiry:</strong> {max_age_hours} hours</div>
         </div>
+        <div class="ip-usage">
+            <div class="ip-usage-header">
+                <span><strong>Your IP usage:</strong> {ip_used_gb:.2f} GB / {ip_limit_gb:.2f} GB</span>
+                <span>{ip_percentage:.0f}%</span>
+            </div>
+            <div class="storage-bar ip-usage-bar">
+                <div class="storage-used" style="width: {ip_percentage:.1f}%;"></div>
+            </div>
+        </div>
         <div class="upload-actions">
             <button type="button" class="upload-btn" data-upload-btn disabled>Upload</button>
             <button type="button" class="clear-btn" data-clear-btn disabled>Clear</button>
