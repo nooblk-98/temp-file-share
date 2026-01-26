@@ -12,6 +12,37 @@ document.querySelectorAll('[data-copy]').forEach((btn) => {
     });
 });
 
+const themeToggle = document.querySelector('[data-theme-toggle]');
+const themeLabel = themeToggle?.querySelector('.theme-toggle__label');
+const themeIcon = themeToggle?.querySelector('.theme-toggle__icon');
+
+const applyTheme = (theme) => {
+    document.body.dataset.theme = theme;
+    const isDark = theme === 'dark';
+    if (themeToggle) themeToggle.setAttribute('aria-pressed', String(isDark));
+    if (themeLabel) themeLabel.textContent = isDark ? 'Dark' : 'Light';
+    if (themeIcon) themeIcon.textContent = isDark ? '◑' : '◐';
+};
+
+const initTheme = () => {
+    const stored = localStorage.getItem('theme');
+    if (stored === 'dark' || stored === 'light') {
+        applyTheme(stored);
+        return;
+    }
+    const prefersDark = window.matchMedia && window.matchMedia('(prefers-color-scheme: dark)').matches;
+    applyTheme(prefersDark ? 'dark' : 'light');
+};
+
+if (themeToggle) {
+    themeToggle.addEventListener('click', () => {
+        const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
+        localStorage.setItem('theme', next);
+        applyTheme(next);
+    });
+    initTheme();
+}
+
 const dropZone = document.querySelector('[data-drop-zone]');
 const fileInput = document.querySelector('#fileInput');
 const pickBtn = document.querySelector('[data-pick]');
