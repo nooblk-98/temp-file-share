@@ -1,0 +1,52 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Uploads - File Upload Service</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="/static/styles.css">
+</head>
+<body>
+    <div class="top-bar">
+        <div>
+            <h1>Uploads</h1>
+            <p>All files currently stored on the server.</p>
+        </div>
+        <div class="top-actions">
+            <a class="ghost-link" href="/">Back to home</a>
+            <button class="theme-toggle" type="button" data-theme-toggle aria-pressed="false">
+                <span class="theme-toggle__icon" aria-hidden="true">◐</span>
+                <span class="theme-toggle__label">Light</span>
+            </button>
+        </div>
+    </div>
+
+    <div class="section-card">
+        <h2>All Files in Storage</h2>
+        <table class="recent-table">
+            <thead>
+                <tr>
+                    <th>File</th>
+                    <th>Size</th>
+                    <th>Uploaded</th>
+                    <th>Expires</th>
+                    <th>IP</th>
+                    <th>Country</th>
+                </tr>
+            </thead>
+            <tbody>
+                {recent_uploads_html}
+            </tbody>
+        </table>
+    </div>
+
+    <footer>
+        Created by <a href="https://github.com/nooblk-98" target="_blank">nooblk-98</a>
+    </footer>
+
+    <script src="/static/app.js"></script>
+</body>
+</html>

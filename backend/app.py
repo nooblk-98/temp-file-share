@@ -36,11 +36,15 @@ RATE_LIMIT_SECONDS = config.get('RATE_LIMIT_SECONDS', 0)
 CLEANUP_INTERVAL_SECONDS = config.get('CLEANUP_INTERVAL_SECONDS', 300)
 
 TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'index.html')
+UPLOADS_TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'uploads.html')
 UPLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, 'scripts', 'upload.sh')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
 with open(TEMPLATE_PATH) as f:
     INDEX_TEMPLATE = f.read()
+
+with open(UPLOADS_TEMPLATE_PATH) as f:
+    UPLOADS_TEMPLATE = f.read()
 
 with open(UPLOAD_SCRIPT_PATH) as f:
     UPLOAD_SCRIPT = f.read()
@@ -319,6 +323,15 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 percentage=percentage,
                 max_age_hours=config['MAX_AGE_HOURS'],
                 ip_limit_gb=config['IP_LIMIT_GB'],
+                recent_uploads_html=recent_uploads_html,
+            )
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/html')
+            self.end_headers()
+            self.wfile.write(html.encode())
+        elif self.path in ('/uploads', '/uploads.html'):
+            recent_uploads_html = get_recent_uploads()
+            html = UPLOADS_TEMPLATE.format(
                 recent_uploads_html=recent_uploads_html,
             )
             self.send_response(200)

@@ -335,11 +335,53 @@ footer {
     word-break: break-all;
 }
 
+.section-card {
+    border: 1px solid var(--border);
+    border-radius: 16px;
+    background: var(--panel);
+    padding: 16px 18px;
+    margin: 16px 0 20px;
+    box-shadow: 0 14px 36px var(--shadow);
+}
+
+.cta-link {
+    display: inline-flex;
+    align-items: center;
+    gap: 8px;
+    margin-top: 6px;
+    padding: 8px 14px;
+    border-radius: 999px;
+    background: var(--accent);
+    color: #ffffff;
+    text-decoration: none;
+    font-size: 13px;
+    font-weight: 600;
+}
+
 .top-bar {
     display: flex;
     align-items: flex-start;
     justify-content: space-between;
     gap: 16px;
+}
+
+.top-actions {
+    display: inline-flex;
+    align-items: center;
+    gap: 10px;
+    flex-wrap: wrap;
+    justify-content: flex-end;
+}
+
+.ghost-link {
+    text-decoration: none;
+    color: var(--text);
+    border: 1px solid var(--border);
+    border-radius: 999px;
+    padding: 8px 14px;
+    font-size: 13px;
+    font-weight: 600;
+    background: var(--button-bg);
 }
 
 .theme-toggle {
