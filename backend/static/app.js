@@ -34,13 +34,14 @@ const initTheme = () => {
     applyTheme(prefersDark ? 'dark' : 'light');
 };
 
+initTheme();
+
 if (themeToggle) {
     themeToggle.addEventListener('click', () => {
         const next = document.body.dataset.theme === 'dark' ? 'light' : 'dark';
         localStorage.setItem('theme', next);
         applyTheme(next);
     });
-    initTheme();
 }
 
 const dropZone = document.querySelector('[data-drop-zone]');
