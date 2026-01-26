@@ -49,9 +49,3 @@ curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh &&
 - Limits apply per IP.
 - If you hit the IP limit, run `./upload.sh --clear` and try again.
 - The server uses `X-Real-IP` or `X-Forwarded-For` if provided by a reverse proxy; otherwise it uses the direct client IP.
-
-
-## More Docs
-
-- Development guide: `DEVELOPMENT.md`
-- Contribution guide: `CONTRIBUTING.md`
