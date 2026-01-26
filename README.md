@@ -3,6 +3,8 @@
 Upload files and folders from your terminal and get a download link.
 
 ![UI Screenshot](images/ui.png)
+---
+![UI Screenshot](images/ui_2.png)
 
 ## Features
 
