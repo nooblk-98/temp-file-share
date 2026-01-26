@@ -34,6 +34,7 @@ IP_LIMIT_GB = config['IP_LIMIT_GB']
 FILES_DB = os.path.join(BASE_DIR, config['FILES_DB'])
 RATE_LIMIT_SECONDS = config.get('RATE_LIMIT_SECONDS', 0)
 CLEANUP_INTERVAL_SECONDS = config.get('CLEANUP_INTERVAL_SECONDS', 300)
+PUBLIC_BASE_URL = config.get('PUBLIC_BASE_URL', '')
 
 TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'index.html')
 UPLOADS_TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'uploads.html')
@@ -303,8 +304,10 @@ class Handler(http.server.BaseHTTPRequestHandler):
         expire_time = time.time() + MAX_AGE_SECONDS
         expire_str = datetime.datetime.fromtimestamp(expire_time).strftime('%Y-%m-%d %H:%M:%S')
 
+        base_url = PUBLIC_BASE_URL.rstrip('/')
+        public_download = f'{base_url}/download/{filename}' if base_url else f'/download/{filename}'
         response = (
-            f'https://dl.itsnooblk.com/download/{filename}\n'
+            f'{public_download}\n'
             f'Your IP: {client_ip}\n'
             f'File size: {file_size / 1024**2:.2f} MB\n'
             f'Expires: {expire_str}\n'
