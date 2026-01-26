@@ -15,13 +15,15 @@ document.querySelectorAll('[data-copy]').forEach((btn) => {
 const themeToggle = document.querySelector('[data-theme-toggle]');
 const themeLabel = themeToggle?.querySelector('.theme-toggle__label');
 const themeIcon = themeToggle?.querySelector('.theme-toggle__icon');
+const sunIcon = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M6.76 4.84l-1.8-1.79-1.41 1.41 1.79 1.8 1.42-1.42zm10.48 0l1.8-1.79 1.41 1.41-1.79 1.8-1.42-1.42zM12 4V1h-2v3h2zm0 19v-3h-2v3h2zm8-9h3v-2h-3v2zM4 13H1v-2h3v2zm12.24 6.16l1.79 1.8 1.41-1.41-1.8-1.79-1.4 1.4zM6.76 19.16l-1.8 1.79 1.41 1.41 1.79-1.8-1.4-1.4zM12 6a6 6 0 1 0 0 12 6 6 0 0 0 0-12z"></path></svg>';
+const moonIcon = '<svg viewBox="0 0 24 24" focusable="false" aria-hidden="true"><path d="M12.74 2.05a9 9 0 1 0 9.21 11.21A8 8 0 0 1 12.74 2.05z"></path></svg>';
 
 const applyTheme = (theme) => {
     document.body.dataset.theme = theme;
     const isDark = theme === 'dark';
     if (themeToggle) themeToggle.setAttribute('aria-pressed', String(isDark));
     if (themeLabel) themeLabel.textContent = isDark ? 'Dark' : 'Light';
-    if (themeIcon) themeIcon.textContent = isDark ? 'D' : 'L';
+    if (themeIcon) themeIcon.innerHTML = isDark ? moonIcon : sunIcon;
 };
 
 const initTheme = () => {

@@ -449,6 +449,14 @@ footer {
 
 .theme-toggle__icon {
     font-size: 14px;
+    display: inline-flex;
+    align-items: center;
+}
+
+.theme-toggle__icon svg {
+    width: 16px;
+    height: 16px;
+    fill: currentColor;
 }
 
 @media (max-width: 720px) {
