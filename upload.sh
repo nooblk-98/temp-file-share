@@ -24,7 +24,7 @@ upload_file="$temp_zip"
 
 # upload with curl
 echo "Uploading..."
-url=$(curl -# -F "file=@$upload_file" $BACKEND_URL/upload)
+url=$(curl -sS -F "file=@$upload_file" "$BACKEND_URL/upload")
 
 echo "$url"
 

@@ -202,6 +202,13 @@ last_upload_time = {}
 
 
 class Handler(http.server.BaseHTTPRequestHandler):
+    def safe_write(self, data):
+        try:
+            self.wfile.write(data)
+        except (BrokenPipeError, ConnectionResetError):
+            return False
+        return True
+
     def do_POST(self):
         cleanup_old_files()
         client_ip = get_client_ip(self)
@@ -236,7 +243,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.end_headers()
             freed_mb = freed_bytes / 1024**2
-            self.wfile.write(f'Cleared files for IP {client_ip}. Freed {freed_mb:.2f} MB'.encode())
+            self.safe_write(f'Cleared files for IP {client_ip}. Freed {freed_mb:.2f} MB'.encode())
             return
 
         db = load_db()
@@ -307,7 +314,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
         )
         self.send_response(200)
         self.end_headers()
-        self.wfile.write(response.encode())
+        self.safe_write(response.encode())
 
     def do_GET(self):
         cleanup_old_files()
@@ -336,7 +343,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
-            self.wfile.write(html.encode())
+            self.safe_write(html.encode())
         elif self.path in ('/uploads', '/uploads.html'):
             recent_uploads_html = get_recent_uploads()
             html = UPLOADS_TEMPLATE.format(
@@ -345,13 +352,13 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
-            self.wfile.write(html.encode())
+            self.safe_write(html.encode())
         elif self.path == '/upload.sh':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
             self.send_header('Content-Disposition', 'attachment; filename="upload.sh"')
             self.end_headers()
-            self.wfile.write(UPLOAD_SCRIPT.encode())
+            self.safe_write(UPLOAD_SCRIPT.encode())
         elif self.path.startswith('/static/'):
             rel_path = self.path[len('/static/') :]
             if rel_path not in ('styles.css', 'app.js'):
@@ -367,7 +374,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.send_response(200)
             self.send_header('Content-Type', content_type)
             self.end_headers()
-            self.wfile.write(data)
+            self.safe_write(data)
         elif self.path.startswith('/download/'):
             filename = self.path[len('/download/') :].split('?')[0]
             filepath = os.path.join(UPLOAD_DIR, filename)
@@ -378,7 +385,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
                 self.end_headers()
                 with open(filepath, 'rb') as f:
-                    self.wfile.write(f.read())
+                    self.safe_write(f.read())
             else:
                 self.send_error(404)
         else:
