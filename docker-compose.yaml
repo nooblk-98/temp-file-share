@@ -7,3 +7,5 @@ services:
       - '/opt/temp-file-share/data:/app/data'
     container_name: backend-gk4cok4goww8wskwsk0sooos-035007235070
     restart: unless-stopped
+    environment:
+      TZ: Asia/Colombo
