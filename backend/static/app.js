@@ -21,7 +21,7 @@ const applyTheme = (theme) => {
     const isDark = theme === 'dark';
     if (themeToggle) themeToggle.setAttribute('aria-pressed', String(isDark));
     if (themeLabel) themeLabel.textContent = isDark ? 'Dark' : 'Light';
-    if (themeIcon) themeIcon.textContent = isDark ? '◑' : '◐';
+    if (themeIcon) themeIcon.textContent = isDark ? 'D' : 'L';
 };
 
 const initTheme = () => {
