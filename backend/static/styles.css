@@ -353,6 +353,14 @@ footer {
     box-shadow: 0 14px 36px var(--shadow);
 }
 
+.section-header {
+    display: flex;
+    align-items: center;
+    justify-content: space-between;
+    gap: 16px;
+    flex-wrap: wrap;
+}
+
 .cta-link {
     display: inline-flex;
     align-items: center;
@@ -419,6 +427,11 @@ footer {
 
 @media (max-width: 720px) {
     .top-bar {
+        flex-direction: column;
+        align-items: flex-start;
+    }
+
+    .section-header {
         flex-direction: column;
         align-items: flex-start;
     }

@@ -51,6 +51,8 @@ const uploadBtn = document.querySelector('[data-upload-btn]');
 const clearBtn = document.querySelector('[data-clear-btn]');
 const uploadList = document.querySelector('[data-upload-list]');
 const uploadStatus = document.querySelector('[data-upload-status]');
+const clearUploadsBtn = document.querySelector('[data-clear-uploads]');
+const clearUploadsStatus = document.querySelector('[data-clear-status]');
 
 const uploadItems = [];
 let isUploading = false;
@@ -262,5 +264,32 @@ if (clearBtn) {
         uploadList.innerHTML = '';
         setStatus('Upload list cleared.');
         updateControls();
+    });
+}
+
+if (clearUploadsBtn) {
+    clearUploadsBtn.addEventListener('click', async () => {
+        clearUploadsBtn.disabled = true;
+        if (clearUploadsStatus) {
+            clearUploadsStatus.textContent = 'Clearing uploads...';
+            clearUploadsStatus.style.color = '';
+        }
+        try {
+            const response = await fetch('/clear', { method: 'POST' });
+            const text = await response.text();
+            if (!response.ok) {
+                throw new Error(text || 'Failed to clear uploads.');
+            }
+            if (clearUploadsStatus) {
+                clearUploadsStatus.textContent = text || 'Uploads cleared.';
+            }
+        } catch (error) {
+            if (clearUploadsStatus) {
+                clearUploadsStatus.textContent = error.message || 'Failed to clear uploads.';
+                clearUploadsStatus.style.color = '#b71c1c';
+            }
+        } finally {
+            clearUploadsBtn.disabled = false;
+        }
     });
 }
