@@ -2,7 +2,7 @@
 
 Upload files and folders from your terminal and get a download link.
 
-![UI Screenshot](images/ui.png)
+<img src="images/ui.png" alt="UI Screenshot" style="border-radius: 12px;">
 ---
 ![UI Screenshot](images/ui_2.png)
 
