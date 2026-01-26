@@ -40,14 +40,6 @@ Delete everything you uploaded from your current IP (one line):
 curl -s https://dl.itsnooblk.com/upload.sh -o upload.sh && chmod +x upload.sh && ./upload.sh --clear
 ```
 
-## Custom Backend
-
-```bash
-export BACKEND_URL=https://yourdomain.com
-wget -q $BACKEND_URL/upload.sh -O upload.sh
-chmod +x upload.sh
-./upload.sh files
-```
 
 ## Notes
 
@@ -58,11 +50,6 @@ chmod +x upload.sh
 - If you hit the IP limit, run `./upload.sh --clear` and try again.
 - The server uses `X-Real-IP` or `X-Forwarded-For` if provided by a reverse proxy; otherwise it uses the direct client IP.
 
-## Configuration
-
-Edit `backend/config.json`:
-- `RATE_LIMIT_SECONDS`: seconds to wait between uploads from the same IP
-- `CLEANUP_INTERVAL_SECONDS`: background cleanup interval
 
 ## More Docs
 
