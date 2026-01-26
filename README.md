@@ -4,7 +4,7 @@ Upload files and folders from your terminal and get a download link.
 
 <img src="images/ui.png" alt="UI Screenshot" style="border-radius: 12px;">
 ---
-![UI Screenshot](images/ui_2.png)
+<img src="images/ui_2.png" alt="UI Screenshot" style="border-radius: 12px;">
 
 ## Features
 
