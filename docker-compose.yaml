@@ -4,4 +4,4 @@ services:
     network_mode: "host"
     volumes:
       - /opt/temp-file-share/uploads:/app/uploads
-      - /opt/temp-file-share/files_db.json:/app/files_db.json
+      - /opt/temp-file-share/data:/app/data

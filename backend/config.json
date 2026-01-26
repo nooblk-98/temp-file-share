@@ -3,7 +3,7 @@
   "MAX_STORAGE_GB": 50,
   "MAX_AGE_HOURS": 5,
   "IP_LIMIT_GB": 10,
-  "FILES_DB": "files_db.json",
+  "FILES_DB": "data/files_db.json",
   "RATE_LIMIT_SECONDS": 10,
   "CLEANUP_INTERVAL_SECONDS": 300
 }
