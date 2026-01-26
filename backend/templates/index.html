@@ -39,6 +39,10 @@
                 <input id="fileInput" class="file-input" type="file" multiple>
             </div>
         </div>
+        <div class="upload-limits">
+            <div><strong>Per‑IP limit:</strong> {ip_limit_gb:.2f} GB</div>
+            <div><strong>File expiry:</strong> {max_age_hours} hours</div>
+        </div>
         <div class="upload-actions">
             <button type="button" class="upload-btn" data-upload-btn disabled>Upload</button>
             <button type="button" class="clear-btn" data-clear-btn disabled>Clear</button>
@@ -72,13 +76,28 @@
     </div>
 
     <h2>Features</h2>
-    <ul>
-        <li>Automatic zipping of folders and multiple files</li>
-        <li>File expiration after {max_age_hours} hours</li>
-        <li>Per-IP storage limits ({ip_limit_gb:.2f} GB)</li>
-        <li>Progress bars for uploads</li>
-        <li>Direct download links</li>
-    </ul>
+    <div class="features-grid">
+        <div class="feature-card">
+            <h3>Smart Packaging</h3>
+            <p>Automatic zipping of folders and multiple files for fast transfers.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Auto Expiry</h3>
+            <p>Files expire after {max_age_hours} hours to keep storage tidy.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Per‑IP Limits</h3>
+            <p>Each IP is capped at {ip_limit_gb:.2f} GB for fair usage.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Progress Tracking</h3>
+            <p>Upload progress bars with clear success and error states.</p>
+        </div>
+        <div class="feature-card">
+            <h3>Direct Links</h3>
+            <p>Get instant download links after each successful upload.</p>
+        </div>
+    </div>
 
     <div class="section-card">
         <h2>Uploads</h2>
