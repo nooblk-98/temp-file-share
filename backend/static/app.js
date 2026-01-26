@@ -169,8 +169,18 @@ const addFiles = (fileList) => {
 
 const extractErrorMessage = (xhr) => {
     const raw = (xhr.responseText || '').trim();
-    if (raw) return raw.split('\n')[0];
-    return xhr.statusText || `Error ${xhr.status}`;
+    if (!raw) return xhr.statusText || `Error ${xhr.status}`;
+
+    if (raw.includes('<')) {
+        const wrapper = document.createElement('div');
+        wrapper.innerHTML = raw;
+        const text = (wrapper.textContent || '').replace(/\s+/g, ' ').trim();
+        const messageMatch = text.match(/Message:\s*([^.]*)/i);
+        if (messageMatch?.[1]) return messageMatch[1].trim();
+        return text.split('Error code')[0]?.trim() || `Error ${xhr.status}`;
+    }
+
+    return raw.split('\n')[0];
 };
 
 const uploadSingle = (item) => new Promise((resolve) => {
