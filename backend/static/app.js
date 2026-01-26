@@ -190,11 +190,20 @@ const uploadSingle = (item) => new Promise((resolve) => {
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/upload');
+    const startedAt = Date.now();
+    let lastLoaded = 0;
+    let lastTick = startedAt;
 
     xhr.upload.addEventListener('progress', (event) => {
         if (!event.lengthComputable) return;
+        const now = Date.now();
+        const deltaBytes = event.loaded - lastLoaded;
+        const deltaTime = Math.max(now - lastTick, 1);
+        const speed = (deltaBytes / deltaTime) * 1000;
+        lastLoaded = event.loaded;
+        lastTick = now;
         const percent = Math.round((event.loaded / event.total) * 100);
-        updateItem(item.id, { progress: percent, status: 'Uploading' });
+        updateItem(item.id, { progress: percent, status: `Uploading · ${formatBytes(speed)}/s` });
     });
 
     xhr.addEventListener('load', () => {
