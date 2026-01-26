@@ -341,6 +341,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 ip_percentage=ip_percentage,
                 max_age_hours=config['MAX_AGE_HOURS'],
                 ip_limit_gb=config['IP_LIMIT_GB'],
+                public_base_url=PUBLIC_BASE_URL.rstrip('/'),
                 recent_uploads_html=recent_uploads_html,
             )
             self.send_response(200)
