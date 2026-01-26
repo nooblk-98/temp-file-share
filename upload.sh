@@ -16,7 +16,9 @@ if [ $# -eq 0 ]; then
 fi
 
 temp_zip="/tmp/upload_$(date +%s).tar.gz"
+echo "Zipping files..."
 tar -czf "$temp_zip" "$@"
+echo "Zip created: $temp_zip"
 upload_file="$temp_zip"
 
 # upload with curl
