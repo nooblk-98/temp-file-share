@@ -165,6 +165,12 @@ const addFiles = (fileList) => {
     renderUploads();
 };
 
+const extractErrorMessage = (xhr) => {
+    const raw = (xhr.responseText || '').trim();
+    if (raw) return raw.split('\n')[0];
+    return xhr.statusText || `Error ${xhr.status}`;
+};
+
 const uploadSingle = (item) => new Promise((resolve) => {
     const formData = new FormData();
     formData.append('file', item.file, item.file.name);
@@ -184,13 +190,16 @@ const uploadSingle = (item) => new Promise((resolve) => {
             const link = lines[0] || '';
             updateItem(item.id, { progress: 100, status: 'Uploaded', link });
         } else {
-            updateItem(item.id, { status: `Error ${xhr.status}` });
+            const message = extractErrorMessage(xhr);
+            updateItem(item.id, { status: message, progress: 100 });
+            setStatus(message, true);
         }
         resolve();
     });
 
     xhr.addEventListener('error', () => {
-        updateItem(item.id, { status: 'Upload failed' });
+        updateItem(item.id, { status: 'Upload failed', progress: 100 });
+        setStatus('Upload failed. Please try again.', true);
         resolve();
     });
 
