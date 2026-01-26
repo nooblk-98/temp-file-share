@@ -242,6 +242,13 @@ if (pickBtn && fileInput) {
 }
 
 if (dropZone) {
+    dropZone.addEventListener('click', (event) => {
+        if (!fileInput) return;
+        const target = event.target;
+        if (target instanceof Element && target.closest('button, a')) return;
+        fileInput.click();
+    });
+
     ['dragenter', 'dragover'].forEach((eventName) => {
         dropZone.addEventListener(eventName, (event) => {
             event.preventDefault();

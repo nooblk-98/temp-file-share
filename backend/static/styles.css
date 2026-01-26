@@ -190,6 +190,7 @@ footer {
     padding: 20px;
     background: color-mix(in srgb, var(--panel) 85%, transparent);
     transition: border-color 0.2s ease, background 0.2s ease;
+    cursor: pointer;
 }
 
 .drop-zone.is-dragover {
