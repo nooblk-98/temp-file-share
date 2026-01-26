@@ -5,6 +5,6 @@
   "IP_LIMIT_GB": 10,
   "PUBLIC_BASE_URL": "https://dl.itsnooblk.com",
   "FILES_DB": "data/files_db.json",
-  "RATE_LIMIT_SECONDS": 10,
+  "RATE_LIMIT_SECONDS": 2,
   "CLEANUP_INTERVAL_SECONDS": 300
 }
