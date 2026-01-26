@@ -11,6 +11,14 @@
 
 ---
 
+## UI Screenshots
+
+<img src="images/ui.png" alt="UI Screenshot" style="border-radius: 12px;">
+---
+<img src="images/ui_2.png" alt="UI Screenshot" style="border-radius: 12px;">
+
+---
+
 ### What is included
 
 - Terminal upload script with link output.
