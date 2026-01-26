@@ -1,7 +1,12 @@
 services:
   backend:
     build: ./backend
-    network_mode: "host"
+    network_mode: host
     volumes:
-      - /opt/temp-file-share/uploads:/app/uploads
-      - /opt/temp-file-share/data:/app/data
+      - '/opt/temp-file-share/uploads:/app/uploads'
+      - '/opt/temp-file-share/data:/app/data'
+    container_name: backend-gk4cok4goww8wskwsk0sooos-035007235070
+    restart: unless-stopped
+    labels:
+      - traefik.http.middlewares.upload-buffering.buffering.maxRequestBodyBytes=10737418240
+      - traefik.http.middlewares.upload-buffering.buffering.memRequestBodyBytes=104857600
