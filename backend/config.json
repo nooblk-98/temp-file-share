@@ -1,7 +1,7 @@
 {
   "UPLOAD_DIR": "uploads",
   "MAX_STORAGE_GB": 50,
-  "MAX_AGE_HOURS": 2,
+  "MAX_AGE_HOURS": 5,
   "IP_LIMIT_GB": 10,
   "PUBLIC_BASE_URL": "https://dl.itsnooblk.com",
   "FILES_DB": "data/files_db.json",
