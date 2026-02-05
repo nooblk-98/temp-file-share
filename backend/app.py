@@ -15,6 +15,7 @@ from html import escape
 import ipaddress
 import urllib.request
 import urllib.error
+import urllib.parse
 
 PORT = 54000
 BASE_DIR = os.path.dirname(os.path.abspath(__file__))
@@ -305,7 +306,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
         expire_str = datetime.datetime.fromtimestamp(expire_time).strftime('%Y-%m-%d %H:%M:%S')
 
         base_url = PUBLIC_BASE_URL.rstrip('/')
-        public_download = f'{base_url}/download/{filename}' if base_url else f'/download/{filename}'
+        encoded_filename = urllib.parse.quote(filename, safe='')
+        public_download = f'{base_url}/download/{encoded_filename}' if base_url else f'/download/{encoded_filename}'
         response = (
             f'{public_download}\n'
             f'Your IP: {client_ip}\n'
@@ -380,13 +382,20 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.safe_write(data)
         elif self.path.startswith('/download/'):
-            filename = self.path[len('/download/') :].split('?')[0]
+            raw_name = self.path[len('/download/') :].split('?')[0]
+            filename = urllib.parse.unquote(raw_name)
             filepath = os.path.join(UPLOAD_DIR, filename)
             if os.path.exists(filepath):
                 logging.info(f'Download: IP={get_client_ip(self)}, File={filename}')
+                download_name = clean_display_name(filename)
+                download_name_safe = download_name.replace('"', '')
+                download_name_encoded = urllib.parse.quote(download_name_safe, safe='')
                 self.send_response(200)
                 self.send_header('Content-Type', 'application/octet-stream')
-                self.send_header('Content-Disposition', f'attachment; filename="{filename}"')
+                self.send_header(
+                    'Content-Disposition',
+                    f'attachment; filename="{download_name_safe}"; filename*=UTF-8\'\'{download_name_encoded}'
+                )
                 self.end_headers()
                 with open(filepath, 'rb') as f:
                     self.safe_write(f.read())
