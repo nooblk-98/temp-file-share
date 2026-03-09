@@ -39,6 +39,8 @@ PUBLIC_BASE_URL = config.get('PUBLIC_BASE_URL', '')
 
 TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'index.html')
 UPLOADS_TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'uploads.html')
+ROBOTS_TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'robots.txt')
+SITEMAP_TEMPLATE_PATH = os.path.join(BASE_DIR, 'templates', 'sitemap.xml')
 UPLOAD_SCRIPT_PATH = os.path.join(BASE_DIR, 'scripts', 'upload.sh')
 STATIC_DIR = os.path.join(BASE_DIR, 'static')
 
@@ -47,6 +49,12 @@ with open(TEMPLATE_PATH) as f:
 
 with open(UPLOADS_TEMPLATE_PATH) as f:
     UPLOADS_TEMPLATE = f.read()
+
+with open(ROBOTS_TEMPLATE_PATH) as f:
+    ROBOTS_TEMPLATE = f.read()
+
+with open(SITEMAP_TEMPLATE_PATH) as f:
+    SITEMAP_TEMPLATE = f.read()
 
 with open(UPLOAD_SCRIPT_PATH) as f:
     UPLOAD_SCRIPT = f.read()
@@ -188,6 +196,15 @@ def country_code_to_flag(code):
         return ''
     code_lower = code.lower()
     return f'<img class="flag-img" src="https://flagcdn.com/w20/{code_lower}.png" alt="{code.upper()} flag">'
+
+
+def get_public_base_url(handler):
+    configured = PUBLIC_BASE_URL.rstrip('/')
+    if configured:
+        return configured
+    forwarded_proto = handler.headers.get('X-Forwarded-Proto', 'http').split(',')[0].strip()
+    host = handler.headers.get('Host', f'localhost:{PORT}')
+    return f'{forwarded_proto}://{host}'
 
 
 def start_cleanup_thread():
@@ -335,6 +352,7 @@ class Handler(http.server.BaseHTTPRequestHandler):
             ip_used_gb = ip_used_bytes / 1024**3
             ip_percentage = (ip_used_gb / IP_LIMIT_GB) * 100 if IP_LIMIT_GB > 0 else 0
             recent_uploads_html = get_recent_uploads()
+            base_url = get_public_base_url(self)
             html = INDEX_TEMPLATE.format(
                 used_gb=used_gb,
                 total_gb=total_gb,
@@ -343,7 +361,8 @@ class Handler(http.server.BaseHTTPRequestHandler):
                 ip_percentage=ip_percentage,
                 max_age_hours=config['MAX_AGE_HOURS'],
                 ip_limit_gb=config['IP_LIMIT_GB'],
-                public_base_url=PUBLIC_BASE_URL.rstrip('/'),
+                public_base_url=base_url,
+                base_url=base_url,
                 recent_uploads_html=recent_uploads_html,
             )
             self.send_response(200)
@@ -351,14 +370,31 @@ class Handler(http.server.BaseHTTPRequestHandler):
             self.end_headers()
             self.safe_write(html.encode())
         elif self.path in ('/uploads', '/uploads.html'):
+            base_url = get_public_base_url(self)
             recent_uploads_html = get_recent_uploads()
             html = UPLOADS_TEMPLATE.format(
+                base_url=base_url,
                 recent_uploads_html=recent_uploads_html,
             )
             self.send_response(200)
             self.send_header('Content-Type', 'text/html')
             self.end_headers()
             self.safe_write(html.encode())
+        elif self.path == '/robots.txt':
+            base_url = get_public_base_url(self)
+            content = ROBOTS_TEMPLATE.format(base_url=base_url)
+            self.send_response(200)
+            self.send_header('Content-Type', 'text/plain; charset=utf-8')
+            self.end_headers()
+            self.safe_write(content.encode('utf-8'))
+        elif self.path == '/sitemap.xml':
+            base_url = get_public_base_url(self)
+            lastmod = datetime.datetime.utcnow().date().isoformat()
+            content = SITEMAP_TEMPLATE.format(base_url=base_url, lastmod=lastmod)
+            self.send_response(200)
+            self.send_header('Content-Type', 'application/xml; charset=utf-8')
+            self.end_headers()
+            self.safe_write(content.encode('utf-8'))
         elif self.path == '/upload.sh':
             self.send_response(200)
             self.send_header('Content-Type', 'text/plain')
