@@ -16,7 +16,7 @@ jobs:
           fetch-depth: 0
 
       - name: Generate and update release notes
-        uses: nooblk-98/copilot-release-notes-action@v1
+        uses: nooblk-98/copilot-release-notes-action@v1.1.6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           copilot_model: gpt-4o
