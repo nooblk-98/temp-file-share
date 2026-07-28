@@ -27,12 +27,16 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
-  release-and-publish:
-    name: Release and Publish
+  # ---------------------------------------------------------------------------
+  # Stage 1 -- work out which version this run publishes.
+  # ---------------------------------------------------------------------------
+  version:
+    name: Resolve version
     runs-on: ubuntu-latest
     permissions:
-      contents: write
-      packages: write
+      contents: read
+    outputs:
+      version: ${{ steps.version.outputs.version }}
 
     steps:
       - name: Checkout
@@ -71,12 +75,30 @@ jobs:
             echo "Latest tag $latest, bumping $BUMP -> $version"
           fi
           echo "version=$version" >> "$GITHUB_OUTPUT"
+          echo "### Publishing \`$version\`" >> "$GITHUB_STEP_SUMMARY"
+
+  # ---------------------------------------------------------------------------
+  # Stage 2 -- tag the commit and open the GitHub release.
+  # Skipped when the run was started by a release that already exists.
+  # ---------------------------------------------------------------------------
+  release:
+    name: Tag and create release
+    needs: version
+    if: github.event_name != 'release'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
 
       - name: Create tag and GitHub release
-        if: github.event_name != 'release'
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-          VERSION: ${{ steps.version.outputs.version }}
+          VERSION: ${{ needs.version.outputs.version }}
         run: |
           set -euo pipefail
           if git rev-parse -q --verify "refs/tags/$VERSION" >/dev/null; then
@@ -88,6 +110,27 @@ jobs:
           git tag -a "$VERSION" -m "Release $VERSION"
           git push origin "$VERSION"
           gh release create "$VERSION" --title "$VERSION" --generate-notes --target "$GITHUB_SHA"
+
+  # ---------------------------------------------------------------------------
+  # Stage 3 -- build the multi-arch image and push it to GHCR.
+  # `always()` is required because the release job is skipped on release events,
+  # and a skipped dependency would otherwise skip this job too.
+  # ---------------------------------------------------------------------------
+  publish:
+    name: Build and push image
+    needs: [version, release]
+    if: >-
+      always()
+      && needs.version.result == 'success'
+      && (needs.release.result == 'success' || needs.release.result == 'skipped')
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
 
       - name: Set up QEMU
         uses: docker/setup-qemu-action@v3
@@ -108,9 +151,9 @@ jobs:
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            type=semver,pattern={{version}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}}.{{minor}},value=${{ steps.version.outputs.version }}
-            type=semver,pattern={{major}},value=${{ steps.version.outputs.version }}
+            type=semver,pattern={{version}},value=${{ needs.version.outputs.version }}
+            type=semver,pattern={{major}}.{{minor}},value=${{ needs.version.outputs.version }}
+            type=semver,pattern={{major}},value=${{ needs.version.outputs.version }}
             type=raw,value=latest,enable=${{ github.event_name != 'release' || !github.event.release.prerelease }}
 
       - name: Build and push
@@ -124,12 +167,28 @@ jobs:
           cache-from: type=gha
           cache-to: type=gha,mode=max
 
-      # Last on purpose: the release already carries GitHub's generated notes,
-      # so a hiccup here must not block publishing the image.
+  # ---------------------------------------------------------------------------
+  # Stage 4 -- rewrite the release body with generated notes.
+  # Runs last on purpose: the release already carries GitHub's generated notes,
+  # so a hiccup here must not block publishing the image.
+  # ---------------------------------------------------------------------------
+  release-notes:
+    name: Generate release notes
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
       - name: Generate and update release notes
         uses: nooblk-98/copilot-release-notes-action@v1.1.6
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           copilot_model: gpt-4o
-          tag_name: ${{ steps.version.outputs.version }}
+          tag_name: ${{ needs.version.outputs.version }}
           target_commitish: ${{ github.event.release.target_commitish || github.sha }}
