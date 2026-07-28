@@ -192,3 +192,94 @@ jobs:
           copilot_model: gpt-4o
           tag_name: ${{ needs.version.outputs.version }}
           target_commitish: ${{ github.event.release.target_commitish || github.sha }}
+
+  # ---------------------------------------------------------------------------
+  # Stage 5 -- point the GitOps repo at the image this run just published.
+  #
+  # Argo CD watches nooblk-98/k8s-Infra, not this repository, so the deployment
+  # only moves once the manifest there names the new tag.
+  #
+  # Needs a token that can write to the OTHER repo: GITHUB_TOKEN is scoped to
+  # this one and cannot push there. Create a fine-grained PAT with
+  # "Contents: read and write" on nooblk-98/k8s-Infra and save it here as the
+  # GITOPS_TOKEN secret.
+  # ---------------------------------------------------------------------------
+  gitops:
+    name: Bump image in k8s-Infra
+    needs: [version, publish]
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+
+    env:
+      GITOPS_REPO: nooblk-98/k8s-Infra
+      MANIFEST: Applications/cluster_2/temp-file-share/deployment.yaml
+      IMAGE_REPO: ghcr.io/nooblk-98/temp-file-share
+
+    steps:
+      - name: Check GitOps token is configured
+        env:
+          GITOPS_TOKEN: ${{ secrets.GITOPS_TOKEN }}
+        run: |
+          if [ -z "$GITOPS_TOKEN" ]; then
+            echo "::error::GITOPS_TOKEN is not set. The image was published, but"
+            echo "::error::$GITOPS_REPO was not updated, so Argo CD will not see it."
+            exit 1
+          fi
+
+      - name: Checkout GitOps repo
+        uses: actions/checkout@v4
+        with:
+          repository: ${{ env.GITOPS_REPO }}
+          token: ${{ secrets.GITOPS_TOKEN }}
+          path: gitops
+
+      - name: Bump image tag
+        working-directory: gitops
+        env:
+          VERSION: ${{ needs.version.outputs.version }}
+        run: |
+          set -euo pipefail
+
+          # The published image tag has no leading "v" -- metadata-action's
+          # {{version}} pattern strips it -- while the git tag keeps it.
+          image_tag="${VERSION#v}"
+
+          if [ ! -f "$MANIFEST" ]; then
+            echo "::error::$MANIFEST not found in $GITOPS_REPO"
+            exit 1
+          fi
+
+          current=$(sed -n "s|^ *image: $IMAGE_REPO:\(.*\)$|\1|p" "$MANIFEST" | head -n1)
+          if [ -z "$current" ]; then
+            echo "::error::No '$IMAGE_REPO:<tag>' line in $MANIFEST"
+            exit 1
+          fi
+          if [ "$current" = "$image_tag" ]; then
+            echo "$MANIFEST already pinned to $image_tag, nothing to commit"
+            exit 0
+          fi
+
+          sed -i "s|^\( *image: \)$IMAGE_REPO:.*$|\1$IMAGE_REPO:$image_tag|" "$MANIFEST"
+
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add "$MANIFEST"
+          git commit -m "chore(temp-file-share): bump image to $image_tag"
+
+          # Someone else may have pushed while this run was building.
+          pushed=""
+          for attempt in 1 2 3; do
+            if git push; then
+              pushed=yes
+              break
+            fi
+            echo "push rejected, rebasing (attempt $attempt)"
+            git pull --rebase
+          done
+          if [ -z "$pushed" ]; then
+            echo "::error::could not push to $GITOPS_REPO after 3 attempts"
+            exit 1
+          fi
+
+          echo "### GitOps: \`$current\` -> \`$image_tag\`" >> "$GITHUB_STEP_SUMMARY"
