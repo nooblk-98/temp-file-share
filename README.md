@@ -8,7 +8,7 @@
 [![Python](https://img.shields.io/badge/python-3.9%2B-3776AB?logo=python&logoColor=white&style=flat-square)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/docker-20.10%2B-2496ED?logo=docker&logoColor=white&style=flat-square)](https://www.docker.com/)
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=flat-square)](LICENSE)
-[![Zero dependencies](https://img.shields.io/badge/zero-dependencies-brightgreen?style=flat-square)](backend/requirements.txt)
+[![Zero dependencies](https://img.shields.io/badge/zero-dependencies-brightgreen?style=flat-square)](app/requirements.txt)
 
 [Features](#features) • [Quick Start](#quick-start) • [Usage](#usage) • [API](#api) • [Configuration](#configuration) • [Deployment](#deployment)
 
@@ -76,13 +76,13 @@ docker run -d \
 
 ```bash
 git clone https://github.com/nooblk-98/temp-file-share.git
-cd temp-file-share/backend
+cd temp-file-share/app
 mkdir uploads data
 python3 backend.py
 ```
 
 > [!TIP]
-> Edit `backend/config.json` before starting the server to set your domain, storage limits, and expiry duration.
+> Edit `app/config.json` before starting the server to set your domain, storage limits, and expiry duration.
 
 ---
 
@@ -196,7 +196,7 @@ curl -X POST http://localhost:54000/clear
 
 ## Configuration
 
-All settings are in `backend/config.json`:
+All settings are in `app/config.json`:
 
 ```json
 {
@@ -231,7 +231,7 @@ All settings are in `backend/config.json`:
 ```yaml
 services:
   backend:
-    build: ./backend
+    build: ./app
     network_mode: host
     volumes:
       - /opt/temp-file-share/uploads:/app/uploads
@@ -268,7 +268,7 @@ server {
 ## Project structure
 
 ```
-├── backend/
+├── app/
 │   ├── app.py              # HTTP server (stdlib only)
 │   ├── backend.py          # Entry point
 │   ├── config.json         # Server configuration

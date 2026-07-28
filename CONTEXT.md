@@ -11,7 +11,7 @@
 
 ## Architecture
 
-- **Monolithic backend** — all server logic in `backend/app.py` (~388 lines), supported by extracted modules.
+- **Monolithic backend** — all server logic in `app/app.py` (~388 lines), supported by extracted modules.
 - **Zero external dependencies** — Python stdlib only.
 - **Client upload script** — `upload.sh` (bash), uses `curl` and `tar`.
 
@@ -26,4 +26,4 @@
 | `georesolver.py` | IP-to-country-code resolution | `GeoResolver` protocol — `HttpGeoResolver`, `NullGeoResolver` |
 | `ratelimiter.py` | Per-IP rate limiting | `RateLimiter.allow(ip) -> bool` |
 | `backend.py` | Entry-point shim | `from app import run; run()` |
-| `upload.sh` | Client-side CLI (single copy in `backend/scripts/`) | CLI for `curl` + `tar` uploads |
+| `upload.sh` | Client-side CLI (single copy in `app/scripts/`) | CLI for `curl` + `tar` uploads |

@@ -1,6 +1,6 @@
 services:
   backend:
-    build: ./backend
+    build: ./app
     network_mode: host
     volumes:
       - '/opt/temp-file-share/uploads:/app/uploads'

@@ -1,0 +1,14 @@
+# Keep the build context to source only -- runtime data can be many GB.
+uploads/
+data/
+
+__pycache__/
+*.py[cod]
+*.egg-info/
+.venv/
+venv/
+
+.git/
+.gitignore
+Dockerfile
+.dockerignore

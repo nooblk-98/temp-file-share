@@ -8,8 +8,8 @@ build/
 .eggs/
 
 # Runtime data
-backend/uploads/
-backend/data/
+app/uploads/
+app/data/
 
 # IDE / editor
 .vscode/
