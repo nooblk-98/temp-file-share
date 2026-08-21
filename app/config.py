@@ -22,6 +22,10 @@ def _config_bool(val: object, default: bool) -> bool:
     return str(val).lower() in ("true", "1", "yes")
 
 
+def _env_or_raw(key: str, raw: dict[str, object]) -> object:
+    return os.environ[key] if key in os.environ else raw.get(key)
+
+
 def load_config(base_dir: str) -> Config:
     config_path = os.path.join(base_dir, "config.json")
     try:
@@ -30,13 +34,13 @@ def load_config(base_dir: str) -> Config:
     except json.JSONDecodeError as err:
         raise ValueError("failed to parse config.json") from err
     return Config(
-        upload_dir=_config_str(raw.get("UPLOAD_DIR"), "uploads"),
-        max_storage_gb=_config_int(raw.get("MAX_STORAGE_GB"), 50),
-        max_age_hours=_config_int(raw.get("MAX_AGE_HOURS"), 5),
-        ip_limit_gb=_config_int(raw.get("IP_LIMIT_GB"), 10),
-        files_db=_config_str(raw.get("FILES_DB"), "data/files_db.json"),
-        rate_limit_seconds=_config_int(raw.get("RATE_LIMIT_SECONDS"), 0),
-        cleanup_interval_seconds=_config_int(raw.get("CLEANUP_INTERVAL_SECONDS"), 300),
-        public_base_url=_config_str(raw.get("PUBLIC_BASE_URL"), ""),
-        geo_ip_enabled=_config_bool(raw.get("GEO_IP_ENABLED"), True),
+        upload_dir=_config_str(_env_or_raw("UPLOAD_DIR", raw), "uploads"),
+        max_storage_gb=_config_int(_env_or_raw("MAX_STORAGE_GB", raw), 50),
+        max_age_hours=_config_int(_env_or_raw("MAX_AGE_HOURS", raw), 5),
+        ip_limit_gb=_config_int(_env_or_raw("IP_LIMIT_GB", raw), 10),
+        files_db=_config_str(_env_or_raw("FILES_DB", raw), "data/files_db.json"),
+        rate_limit_seconds=_config_int(_env_or_raw("RATE_LIMIT_SECONDS", raw), 0),
+        cleanup_interval_seconds=_config_int(_env_or_raw("CLEANUP_INTERVAL_SECONDS", raw), 300),
+        public_base_url=_config_str(_env_or_raw("PUBLIC_BASE_URL", raw), ""),
+        geo_ip_enabled=_config_bool(_env_or_raw("GEO_IP_ENABLED", raw), True),
     )

@@ -1,7 +1,8 @@
 services:
   backend:
     build: ./app
-    network_mode: host
+    ports:
+      - '34100:54000'
     volumes:
       - '/opt/temp-file-share/uploads:/app/uploads'
       - '/opt/temp-file-share/data:/app/data'
@@ -9,3 +10,12 @@ services:
     restart: unless-stopped
     environment:
       TZ: Asia/Colombo
+      UPLOAD_DIR: uploads
+      MAX_STORAGE_GB: 50
+      MAX_AGE_HOURS: 5
+      IP_LIMIT_GB: 10
+      PUBLIC_BASE_URL: https://dl.itsnooblk.com
+      FILES_DB: data/files_db.json
+      RATE_LIMIT_SECONDS: 2
+      CLEANUP_INTERVAL_SECONDS: 300
+      GEO_IP_ENABLED: "true"
