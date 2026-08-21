@@ -5,7 +5,7 @@ services:
     volumes:
       - '/opt/temp-file-share/uploads:/app/uploads'
       - '/opt/temp-file-share/data:/app/data'
-    container_name: backend-gk4cok4goww8wskwsk0sooos-035007235070
+    container_name: temp-file-share
     restart: unless-stopped
     environment:
       TZ: Asia/Colombo
