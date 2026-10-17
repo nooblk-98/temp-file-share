@@ -24,6 +24,9 @@ cleanup() {
 trap cleanup EXIT
 
 mkdir -p "$WORK/uploads" "$WORK/data"
+# mktemp -d is 0700 and owned by the runner user; the chown container below
+# has only CAP_CHOWN (no DAC_READ_SEARCH), so it must be able to traverse it.
+chmod 0755 "$WORK"
 # The container user is uid/gid 10001; the bind mounts must be writable by it.
 # chown from a throwaway root container so no sudo is needed (runner or laptop).
 docker run --rm --user 0:0 --cap-drop ALL --cap-add CHOWN --entrypoint chown -v "$MOUNT:/w" "$IMAGE" -R 10001:10001 /w/uploads /w/data
