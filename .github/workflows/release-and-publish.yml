@@ -304,7 +304,7 @@ jobs:
           persist-credentials: false
 
       - name: Generate and update release notes
-        uses: nooblk-98/copilot-release-notes-action@ce64182ece97ff8e7392755797f06db072d50878 # v1.1.6
+        uses: nooblk-98/copilot-release-notes-action@0e704c57eaeec551af366fb99592431c93ff55e2 # v1.1.7
         with:
           github_token: ${{ secrets.GITHUB_TOKEN }}
           copilot_model: gpt-4o
