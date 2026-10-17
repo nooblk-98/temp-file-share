@@ -1,21 +1,44 @@
 services:
   backend:
     build: ./app
+    image: ghcr.io/nooblk-98/temp-file-share:${TAG:-latest}
     ports:
-      - '34100:54000'
+      - '${HOST_PORT:-34100}:54000'
     volumes:
-      - '/opt/temp-file-share/uploads:/app/uploads'
-      - '/opt/temp-file-share/data:/app/data'
+      # Must be writable by uid/gid 10001 (the container's non-root user).
+      - '${UPLOADS_HOST_DIR:-/opt/temp-file-share/uploads}:/app/uploads'
+      - '${DATA_HOST_DIR:-/opt/temp-file-share/data}:/app/data'
+      # /tmp holds spooled multipart uploads, so it must fit the largest upload
+      # (a 64 MB tmpfs broke uploads above that). Named volume, not tmpfs.
+      - 'tmp:/tmp'
     container_name: temp-file-share
     restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${MEM_LIMIT:-512m}
+    memswap_limit: ${MEM_LIMIT:-512m}
+    cpus: ${CPU_LIMIT:-1.0}
+    pids_limit: ${PIDS_LIMIT:-256}
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
     environment:
-      TZ: Asia/Colombo
-      UPLOAD_DIR: uploads
-      MAX_STORAGE_GB: 50
-      MAX_AGE_HOURS: 5
-      IP_LIMIT_GB: 10
-      PUBLIC_BASE_URL: https://fs.app.itsnooblk.com
-      FILES_DB: data/files_db.json
-      RATE_LIMIT_SECONDS: 2
-      CLEANUP_INTERVAL_SECONDS: 300
-      GEO_IP_ENABLED: "true"
+      TZ: ${TZ:-Asia/Colombo}
+      UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
+      MAX_STORAGE_GB: ${MAX_STORAGE_GB:-50}
+      MAX_AGE_HOURS: ${MAX_AGE_HOURS:-5}
+      IP_LIMIT_GB: ${IP_LIMIT_GB:-10}
+      PUBLIC_BASE_URL: ${PUBLIC_BASE_URL:-https://fs.app.itsnooblk.com}
+      FILES_DB: ${FILES_DB:-data/files_db.json}
+      RATE_LIMIT_SECONDS: ${RATE_LIMIT_SECONDS:-2}
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+      GEO_IP_ENABLED: ${GEO_IP_ENABLED:-true}
+
+volumes:
+  tmp: {}
