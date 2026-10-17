@@ -1,4 +1,4 @@
-ï»¿<div align="center">
+<div align="center">
   <img src="./images/logo.svg" width="360" alt="temp-file-share logo" />
 
 # Temp File Share
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/zero-dependencies-brightgreen?style=flat-square)](app/requirements.txt)
 
-[Features](#features) â€¢ [Quick Start](#quick-start) â€¢ [Usage](#usage) â€¢ [API](#api) â€¢ [Configuration](#configuration) â€¢ [Deployment](#deployment)
+[Features](#features) • [Quick Start](#quick-start) • [Usage](#usage) • [API](#api) • [Configuration](#configuration) • [Deployment](#deployment)
 
 <br>
 
@@ -189,8 +189,8 @@ curl -X POST http://localhost:54000/clear
 
 | Route | Description |
 |---|---|
-| `GET /` | Main dashboard â€” storage usage, quotas, recent uploads |
-| `GET /uploads` | Upload listing â€” file names, sizes, timestamps, country flags |
+| `GET /` | Main dashboard — storage usage, quotas, recent uploads |
+| `GET /uploads` | Upload listing — file names, sizes, timestamps, country flags |
 | `GET /upload.sh` | Download the client upload script |
 | `GET /robots.txt` | Robots exclusion rules |
 | `GET /sitemap.xml` | XML sitemap |
@@ -334,22 +334,21 @@ cosign verify ghcr.io/nooblk-98/temp-file-share@<digest> \
 ## Project structure
 
 ```
-â”œâ”€â”€ app/
-â”‚   â”œâ”€â”€ app.py              # HTTP server (stdlib only)
-â”‚   â”œâ”€â”€ backend.py          # Entry point
-â”‚   â”œâ”€â”€ config.json         # Server configuration
-â”‚   â”œâ”€â”€ Dockerfile          # Container image
-â”‚   â”œâ”€â”€ pyproject.toml      # Project metadata
-â”‚   â”œâ”€â”€ requirements.txt    # Zero dependencies
-â”‚   â”œâ”€â”€ templates/          # HTML templates
-â”‚   â”œâ”€â”€ static/             # CSS and JS assets
-â”‚   â””â”€â”€ scripts/            # Client upload script
-â”œâ”€â”€ docker-compose.yaml     # Production deployment
-â”œâ”€â”€ .env.example            # Compose configuration template
-â”œâ”€â”€ docs/                   # Migration notes
-â”œâ”€â”€ .github/                # CI, release workflows, smoke test
-â”œâ”€â”€ images/                 # Logo and screenshots
-â””â”€â”€ upload.sh               # Client upload script
+├── app/
+│   ├── app.py              # HTTP server (stdlib only)
+│   ├── backend.py          # Entry point
+│   ├── config.json         # Server configuration
+│   ├── Dockerfile          # Container image
+│   ├── pyproject.toml      # Project metadata
+│   ├── requirements.txt    # Zero dependencies
+│   ├── templates/          # HTML templates
+│   ├── static/             # CSS and JS assets
+│   └── scripts/            # Client upload script
+├── docker-compose.yaml     # Production deployment
+├── .env.example            # Compose configuration template
+├── docs/                   # Migration notes
+├── .github/                # CI, release workflows, smoke test
+├── images/                 # Logo and screenshots
 ```
 
 ## Operational validation and rollback
