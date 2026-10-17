@@ -14,7 +14,13 @@ Dockerfile
 .dockerignore
 
 # Local credentials and environment overrides must never enter the image.
-.env
-.env.*
-*.pem
-*.key
+**/.env
+**/.env.*
+**/*.pem
+**/*.key
+**/*.p12
+**/*.pfx
+**/id_rsa*
+**/id_ed25519*
+**/*.kdbx
+**/.git

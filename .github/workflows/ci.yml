@@ -4,7 +4,7 @@ on:
   workflow_call:
   pull_request:
   push:
-    branches: [main, quick-cache-clear]
+    branches: [main]
 
 permissions:
   contents: read

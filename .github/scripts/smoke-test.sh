@@ -69,7 +69,7 @@ case "$url" in
   "http://127.0.0.1:${PORT}/download/"*) ;;
   *) echo "::error::unexpected download URL"; exit 1 ;;
 esac
-curl --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/downloaded.bin" "$url"
+curl --globoff --proto '=http' --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/downloaded.bin" "$url"
 cmp "$WORK/payload.bin" "$WORK/downloaded.bin"
 echo "download matches upload: OK"
 
@@ -83,6 +83,6 @@ case "$url" in
   "http://127.0.0.1:${PORT}/download/"*) ;;
   *) echo "::error::unexpected download URL"; exit 1 ;;
 esac
-curl --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/big-downloaded.bin" "$url"
+curl --globoff --proto '=http' --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/big-downloaded.bin" "$url"
 cmp "$WORK/big.bin" "$WORK/big-downloaded.bin"
 echo "100 MB download matches upload: OK"
