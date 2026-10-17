@@ -84,6 +84,9 @@ python3 backend.py
 > [!TIP]
 > Edit `app/config.json` before starting the server to set your domain, storage limits, and expiry duration.
 
+> [!NOTE]
+> The image runs as non-root `10001:10001`. If you upgrade an existing `docker run` or compose setup, see [docs/MIGRATION-nonroot.md](docs/MIGRATION-nonroot.md).
+
 ---
 
 ## Usage
@@ -196,7 +199,7 @@ curl -X POST http://localhost:54000/clear
 
 ## Configuration
 
-All settings are in `app/config.json`:
+Settings come from `app/config.json`. Environment variables of the same name override it, and the compose file passes them through from `.env`.
 
 ```json
 {
@@ -221,6 +224,32 @@ All settings are in `app/config.json`:
 | `FILES_DB` | `data/files_db.json` | Path to the file metadata database |
 | `RATE_LIMIT_SECONDS` | `0` | Cooldown between uploads (0 = disabled) |
 | `CLEANUP_INTERVAL_SECONDS` | `300` | Expired file cleanup interval in seconds |
+| `GEO_IP_ENABLED` | `true` | Resolve country flags from IP addresses |
+
+### Docker Compose (`.env`)
+
+Copy `.env.example` to `.env` (git-ignored) and change what you need. Every value in the example is the compose default.
+
+```bash
+cp .env.example .env
+```
+
+| Variable | Default | Description |
+|---|---|---|
+| `TAG` | `latest` | Image tag for `docker compose pull/up` |
+| `HOST_PORT` | `34100` | Host port mapped to container port `54000` |
+| `UPLOADS_HOST_DIR` | `/opt/temp-file-share/uploads` | Host directory for uploads (must be owned by `10001:10001`) |
+| `DATA_HOST_DIR` | `/opt/temp-file-share/data` | Host directory for the metadata DB (must be owned by `10001:10001`) |
+| `MEM_LIMIT` | `512m` | Container memory limit (see below) |
+| `CPU_LIMIT` | `1.0` | Container CPU limit |
+| `PIDS_LIMIT` | `256` | Max processes in the container |
+| `TZ` | `Asia/Colombo` | Container timezone |
+
+The app settings from the table above (`MAX_STORAGE_GB`, `PUBLIC_BASE_URL`, ...) can be set in `.env` too.
+
+### Upload size and memory
+
+The app buffers a whole upload in memory, so the largest file you can share is bounded by `MEM_LIMIT`. Rule of thumb: `MEM_LIMIT` must be at least the largest upload plus ~64 MB. Measured with the compose settings, the default `512m` handles a 450 MB upload; a 500 MB upload is OOM-killed.
 
 ---
 
@@ -228,20 +257,36 @@ All settings are in `app/config.json`:
 
 ### Docker Compose
 
+`docker-compose.yaml` pulls `ghcr.io/nooblk-98/temp-file-share:${TAG:-latest}` and runs it hardened: non-root user, read-only root filesystem, all capabilities dropped, `no-new-privileges`, memory/CPU/PID limits and rotated logs. A named `tmp` volume backs `/tmp` for spooled uploads. Abridged:
+
 ```yaml
 services:
   backend:
-    build: ./app
-    network_mode: host
+    image: ghcr.io/nooblk-98/temp-file-share:${TAG:-latest}
+    ports:
+      - '${HOST_PORT:-34100}:54000'
     volumes:
-      - /opt/temp-file-share/uploads:/app/uploads
-      - /opt/temp-file-share/data:/app/data
+      - '${UPLOADS_HOST_DIR:-/opt/temp-file-share/uploads}:/app/uploads'
+      - '${DATA_HOST_DIR:-/opt/temp-file-share/data}:/app/data'
+      - 'tmp:/tmp'
+    read_only: true
+    cap_drop:
+      - ALL
+    mem_limit: ${MEM_LIMIT:-512m}
     restart: unless-stopped
 ```
 
+On a new host, create the directories and give them to uid/gid `10001`, then start:
+
 ```bash
+sudo mkdir -p /opt/temp-file-share/uploads /opt/temp-file-share/data
+sudo chown -R 10001:10001 /opt/temp-file-share/uploads /opt/temp-file-share/data
+cp .env.example .env
 docker compose up -d
 ```
+
+> [!IMPORTANT]
+> **Upgrading from a root-run image?** The container now runs as non-root `10001:10001`. Existing upload and data directories or volumes must be chowned first. See [docs/MIGRATION-nonroot.md](docs/MIGRATION-nonroot.md) (includes `docker run` and rollback steps).
 
 ### Reverse proxy (nginx)
 
@@ -261,7 +306,27 @@ server {
 ```
 
 > [!IMPORTANT]
-> Set `PUBLIC_BASE_URL` in `config.json` to your public domain so download links resolve correctly. Without this, links will use whatever `Host` header the client sends.
+> Set `PUBLIC_BASE_URL` in `config.json` (or `.env`) to your public domain so download links resolve correctly. Without this, links will use whatever `Host` header the client sends.
+
+---
+
+## CI & releases
+
+**CI** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+
+- Lint and compile: Ruff (correctness rules), `compileall`, Hadolint on the Dockerfile
+- Build the image and run a smoke test (`.github/scripts/smoke-test.sh`): start it non-root with a read-only root fs, upload a file and download it back
+- Trivy scan: fails on fixable CRITICAL/HIGH vulnerabilities
+
+**Releases** (`.github/workflows/release-and-publish.yml`, run manually from `main` or on a published GitHub release) tag the version and publish a multi-arch (`linux/amd64`, `linux/arm64`) image to `ghcr.io/nooblk-98/temp-file-share`. The pipeline gates on a Trivy scan, attaches an SBOM and provenance, and signs the image digest with cosign (keyless, GitHub OIDC).
+
+Verify a signed image:
+
+```bash
+cosign verify ghcr.io/nooblk-98/temp-file-share@<digest> \
+  --certificate-identity-regexp '^https://github\.com/nooblk-98/temp-file-share/\.github/workflows/release-and-publish\.yml@refs/(heads/main|tags/v.+)$' \
+  --certificate-oidc-issuer https://token.actions.githubusercontent.com
+```
 
 ---
 
@@ -279,6 +344,9 @@ server {
 │   ├── static/             # CSS and JS assets
 │   └── scripts/            # Client upload script
 ├── docker-compose.yaml     # Production deployment
+├── .env.example            # Compose configuration template
+├── docs/                   # Migration notes
+├── .github/                # CI, release workflows, smoke test
 ├── images/                 # Logo and screenshots
 └── upload.sh               # Client upload script
 ```
