@@ -1,4 +1,4 @@
-﻿<div align="center">
+ï»¿<div align="center">
   <img src="./images/logo.svg" width="360" alt="temp-file-share logo" />
 
 # Temp File Share
@@ -10,7 +10,7 @@
 [![License](https://img.shields.io/badge/license-AGPL--3.0-blue.svg?style=flat-square)](LICENSE)
 [![Zero dependencies](https://img.shields.io/badge/zero-dependencies-brightgreen?style=flat-square)](app/requirements.txt)
 
-[Features](#features) • [Quick Start](#quick-start) • [Usage](#usage) • [API](#api) • [Configuration](#configuration) • [Deployment](#deployment)
+[Features](#features) â€¢ [Quick Start](#quick-start) â€¢ [Usage](#usage) â€¢ [API](#api) â€¢ [Configuration](#configuration) â€¢ [Deployment](#deployment)
 
 <br>
 
@@ -189,8 +189,8 @@ curl -X POST http://localhost:54000/clear
 
 | Route | Description |
 |---|---|
-| `GET /` | Main dashboard — storage usage, quotas, recent uploads |
-| `GET /uploads` | Upload listing — file names, sizes, timestamps, country flags |
+| `GET /` | Main dashboard â€” storage usage, quotas, recent uploads |
+| `GET /uploads` | Upload listing â€” file names, sizes, timestamps, country flags |
 | `GET /upload.sh` | Download the client upload script |
 | `GET /robots.txt` | Robots exclusion rules |
 | `GET /sitemap.xml` | XML sitemap |
@@ -296,7 +296,7 @@ server {
     server_name dl.example.com;
 
     location / {
-        proxy_pass http://127.0.0.1:54000;
+        proxy_pass http://127.0.0.1:34100;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -312,13 +312,14 @@ server {
 
 ## CI & releases
 
-**CI** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+**CI** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main` and `quick-cache-clear`, and is reused as a release gate:
 
+- Validate Compose configuration and shell syntax
 - Lint and compile: Ruff (correctness rules), `compileall`, Hadolint on the Dockerfile
 - Build the image and run a smoke test (`.github/scripts/smoke-test.sh`): start it non-root with a read-only root fs, upload a file and download it back
 - Trivy scan: fails on fixable CRITICAL/HIGH vulnerabilities
 
-**Releases** (`.github/workflows/release-and-publish.yml`, run manually from `main` or on a published GitHub release) tag the version and publish a multi-arch (`linux/amd64`, `linux/arm64`) image to `ghcr.io/nooblk-98/temp-file-share`. The pipeline gates on a Trivy scan, attaches an SBOM and provenance, and signs the image digest with cosign (keyless, GitHub OIDC).
+**Releases** (`.github/workflows/release-and-publish.yml`, run manually from `main` or on a published GitHub release) tag the version and publish a multi-arch (`linux/amd64`, `linux/arm64`) image to `ghcr.io/nooblk-98/temp-file-share`. Manual releases must pass the full CI workflow before creating a tag; all releases must pass it before publishing an image. The release image also passes the hardened upload/download smoke test. The pipeline gates on a Trivy scan, attaches an SBOM and provenance, and signs the image digest with cosign (keyless, GitHub OIDC).
 
 Verify a signed image:
 
@@ -333,20 +334,39 @@ cosign verify ghcr.io/nooblk-98/temp-file-share@<digest> \
 ## Project structure
 
 ```
-├── app/
-│   ├── app.py              # HTTP server (stdlib only)
-│   ├── backend.py          # Entry point
-│   ├── config.json         # Server configuration
-│   ├── Dockerfile          # Container image
-│   ├── pyproject.toml      # Project metadata
-│   ├── requirements.txt    # Zero dependencies
-│   ├── templates/          # HTML templates
-│   ├── static/             # CSS and JS assets
-│   └── scripts/            # Client upload script
-├── docker-compose.yaml     # Production deployment
-├── .env.example            # Compose configuration template
-├── docs/                   # Migration notes
-├── .github/                # CI, release workflows, smoke test
-├── images/                 # Logo and screenshots
-└── upload.sh               # Client upload script
+â”œâ”€â”€ app/
+â”‚   â”œâ”€â”€ app.py              # HTTP server (stdlib only)
+â”‚   â”œâ”€â”€ backend.py          # Entry point
+â”‚   â”œâ”€â”€ config.json         # Server configuration
+â”‚   â”œâ”€â”€ Dockerfile          # Container image
+â”‚   â”œâ”€â”€ pyproject.toml      # Project metadata
+â”‚   â”œâ”€â”€ requirements.txt    # Zero dependencies
+â”‚   â”œâ”€â”€ templates/          # HTML templates
+â”‚   â”œâ”€â”€ static/             # CSS and JS assets
+â”‚   â””â”€â”€ scripts/            # Client upload script
+â”œâ”€â”€ docker-compose.yaml     # Production deployment
+â”œâ”€â”€ .env.example            # Compose configuration template
+â”œâ”€â”€ docs/                   # Migration notes
+â”œâ”€â”€ .github/                # CI, release workflows, smoke test
+â”œâ”€â”€ images/                 # Logo and screenshots
+â””â”€â”€ upload.sh               # Client upload script
 ```
+
+## Operational validation and rollback
+
+Before deploying, run `docker compose --env-file .env.example config --quiet`,
+build with `docker build -t temp-file-share:check app`, then run
+`bash .github/scripts/smoke-test.sh temp-file-share:check 34101`. The smoke test
+uses isolated temporary storage and bounded HTTP requests; it requires a running
+Linux Docker engine. CI performs these checks plus lint and vulnerability scans.
+
+Deploy a specific tested image tag by setting `TAG` in `.env`. Record the previous
+tag (or digest) and back up both uploads and metadata together before upgrading.
+For rollback, restore the previous `TAG`, run `docker compose pull`, then
+`docker compose up -d --no-build`, and check `docker compose ps` and logs.
+Keep persistent volumes; never use `down -v` as a rollback step. Changes to shared
+environments require approval before deployment.
+
+The nginx example targets Compose's default host port `34100`; adjust it if
+`HOST_PORT` changes. Restrict direct access to that port at the host firewall
+when the service is exposed through a reverse proxy.

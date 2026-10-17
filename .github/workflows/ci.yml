@@ -1,9 +1,10 @@
 name: CI
 
 on:
+  workflow_call:
   pull_request:
   push:
-    branches: [main]
+    branches: [main, quick-cache-clear]
 
 permissions:
   contents: read
@@ -35,6 +36,12 @@ jobs:
           # are not enforced yet.
           version: "0.17.1"
           args: check --select E4,E7,E9,F app
+
+      - name: Validate Compose configuration
+        run: docker compose --env-file .env.example config --quiet
+
+      - name: Check shell syntax
+        run: bash -n .github/scripts/smoke-test.sh app/scripts/upload.sh
 
       - name: Byte-compile
         run: python -m compileall -q app
