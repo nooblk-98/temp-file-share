@@ -33,6 +33,13 @@ env:
   IMAGE_NAME: ${{ github.repository }}
 
 jobs:
+  validate:
+    name: Validate release candidate
+    if: github.ref == 'refs/heads/main' || github.event_name == 'release'
+    permissions:
+      contents: read
+    uses: ./.github/workflows/ci.yml
+
   # ---------------------------------------------------------------------------
   # Stage 1 -- work out which version this run publishes.
   # ---------------------------------------------------------------------------
@@ -97,7 +104,7 @@ jobs:
   # ---------------------------------------------------------------------------
   release:
     name: Tag and create release
-    needs: version
+    needs: [version, validate]
     if: github.event_name != 'release' && github.ref == 'refs/heads/main'
     runs-on: ubuntu-latest
     timeout-minutes: 10
@@ -134,11 +141,12 @@ jobs:
   # ---------------------------------------------------------------------------
   publish:
     name: Build and push image
-    needs: [version, release]
+    needs: [version, release, validate]
     if: >-
       !cancelled()
       && (github.ref == 'refs/heads/main' || github.event_name == 'release')
       && needs.version.result == 'success'
+      && needs.validate.result == 'success'
       && (needs.release.result == 'success' || needs.release.result == 'skipped')
     runs-on: ubuntu-latest
     timeout-minutes: 45
@@ -159,13 +167,6 @@ jobs:
 
       - name: Set up Buildx
         uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
-
-      - name: Log in to GHCR
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Extract metadata
         id: meta
@@ -191,6 +192,9 @@ jobs:
           tags: temp-file-share:scan
           cache-from: type=gha,scope=release
 
+      - name: Smoke test release image
+        run: bash .github/scripts/smoke-test.sh temp-file-share:scan 34101
+
       - name: Trivy gate
         uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
         with:
@@ -199,6 +203,13 @@ jobs:
           ignore-unfixed: true
           exit-code: "1"
           vuln-type: os,library
+
+      - name: Log in to GHCR
+        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
 
       - name: Build and push
         id: push

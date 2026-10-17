@@ -1,4 +1,4 @@
-﻿<div align="center">
+<div align="center">
   <img src="./images/logo.svg" width="360" alt="temp-file-share logo" />
 
 # Temp File Share
@@ -296,7 +296,7 @@ server {
     server_name dl.example.com;
 
     location / {
-        proxy_pass http://127.0.0.1:54000;
+        proxy_pass http://127.0.0.1:34100;
         proxy_set_header X-Real-IP $remote_addr;
         proxy_set_header X-Forwarded-For $proxy_add_x_forwarded_for;
         proxy_set_header X-Forwarded-Proto $scheme;
@@ -312,13 +312,14 @@ server {
 
 ## CI & releases
 
-**CI** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`:
+**CI** (`.github/workflows/ci.yml`) runs on every pull request and on pushes to `main`, and is reused as a release gate:
 
+- Validate Compose configuration and shell syntax
 - Lint and compile: Ruff (correctness rules), `compileall`, Hadolint on the Dockerfile
 - Build the image and run a smoke test (`.github/scripts/smoke-test.sh`): start it non-root with a read-only root fs, upload a file and download it back
 - Trivy scan: fails on fixable CRITICAL/HIGH vulnerabilities
 
-**Releases** (`.github/workflows/release-and-publish.yml`, run manually from `main` or on a published GitHub release) tag the version and publish a multi-arch (`linux/amd64`, `linux/arm64`) image to `ghcr.io/nooblk-98/temp-file-share`. The pipeline gates on a Trivy scan, attaches an SBOM and provenance, and signs the image digest with cosign (keyless, GitHub OIDC).
+**Releases** (`.github/workflows/release-and-publish.yml`, run manually from `main` or on a published GitHub release) tag the version and publish a multi-arch (`linux/amd64`, `linux/arm64`) image to `ghcr.io/nooblk-98/temp-file-share`. Manual releases must pass the full CI workflow before creating a tag; all releases must pass it before publishing an image. A separate local Linux/amd64 build passes the hardened upload/download smoke test and a Trivy scan before publication. The multi-architecture image is built separately with SBOM and provenance attestations. After publication, Trivy scans the pushed digest for both platforms; both scans must pass before cosign signs it using keyless GitHub OIDC. A failed post-push scan can leave an unsigned image in the registry. Deploy only after the workflow succeeds and the image signature verifies.
 
 Verify a signed image:
 
@@ -347,6 +348,39 @@ cosign verify ghcr.io/nooblk-98/temp-file-share@<digest> \
 ├── .env.example            # Compose configuration template
 ├── docs/                   # Migration notes
 ├── .github/                # CI, release workflows, smoke test
-├── images/                 # Logo and screenshots
-└── upload.sh               # Client upload script
+└── images/                 # Logo and screenshots
 ```
+
+## Operational validation and rollback
+
+From the repository root, use Docker Compose v2, a running Linux Docker engine,
+Bash, curl and standard Unix utilities. Ensure host port 34101 is free and
+temporary storage can hold the 100 MB test payload, its downloaded copy and
+container data. Check the example defaults with
+`docker compose --env-file .env.example config --quiet`. After preparing the
+deployment's .env file, also run `docker compose --env-file .env config --quiet`.
+Build with `docker build -t temp-file-share:check app`, then run
+`bash .github/scripts/smoke-test.sh temp-file-share:check 34101`. Expect exit
+status 0, healthy status, uid:gid 10001:10001, a read-only root filesystem,
+and successful small-file and 100 MB upload/download comparisons. The test
+uses isolated temporary storage and bounded HTTP requests. CI also checks
+shell syntax and runs lint and vulnerability scans.
+
+Deploy a specific tested image tag by setting `TAG` in `.env`. Record the previous
+tag and resolved image digest. This Compose file accepts a tag in `TAG`, not a
+bare digest; digest pinning requires an image-reference override. Before upgrading,
+stop writes and take a consistent backup of both configured upload and metadata
+directories, preserving ownership and permissions.
+For an image-only rollback with compatible data, restore the previous `TAG`,
+run `docker compose pull`, then `docker compose up -d --no-build`.
+Check `docker compose ps` for healthy status, inspect
+`docker compose logs --tail=100 backend`, and confirm an upload/download round trip
+through the public endpoint. If data is incompatible, stop the service and use a
+reviewed restore procedure for the paired backup before restarting; account for
+uploads received after that backup. Keep persistent data and volumes; never use
+`down -v` as a rollback step. Changes to shared environments require approval
+before deployment.
+
+The nginx example targets Compose's default host port `34100`; adjust it if
+`HOST_PORT` changes. Restrict direct access to that port at the host firewall
+when the service is exposed through a reverse proxy.

@@ -63,10 +63,13 @@ echo "root fs is read-only"
 
 echo "== upload / download round trip"
 head -c 65536 /dev/urandom > "$WORK/payload.bin"
-resp="$(curl -fsS -F "file=@$MOUNT/payload.bin;filename=payload.bin" "http://127.0.0.1:${PORT}/upload")"
-echo "$resp"
+resp="$(curl --connect-timeout 5 --max-time 180 -fsS -F "file=@$MOUNT/payload.bin;filename=payload.bin" "http://127.0.0.1:${PORT}/upload")"
 url="$(printf '%s\n' "$resp" | head -n1)"
-curl -fsS -o "$MOUNT/downloaded.bin" "$url"
+case "$url" in
+  "http://127.0.0.1:${PORT}/download/"*) ;;
+  *) echo "::error::unexpected download URL"; exit 1 ;;
+esac
+curl --globoff --proto '=http' --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/downloaded.bin" "$url"
 cmp "$WORK/payload.bin" "$WORK/downloaded.bin"
 echo "download matches upload: OK"
 
@@ -74,8 +77,12 @@ echo "download matches upload: OK"
 # buffers uploads in memory and spools to /tmp, so a large file must still work.
 echo "== 100 MB upload / download round trip"
 head -c 104857600 /dev/urandom > "$WORK/big.bin"
-resp="$(curl -fsS -F "file=@$MOUNT/big.bin;filename=big.bin" "http://127.0.0.1:${PORT}/upload")"
+resp="$(curl --connect-timeout 5 --max-time 180 -fsS -F "file=@$MOUNT/big.bin;filename=big.bin" "http://127.0.0.1:${PORT}/upload")"
 url="$(printf '%s\n' "$resp" | head -n1)"
-curl -fsS -o "$MOUNT/big-downloaded.bin" "$url"
+case "$url" in
+  "http://127.0.0.1:${PORT}/download/"*) ;;
+  *) echo "::error::unexpected download URL"; exit 1 ;;
+esac
+curl --globoff --proto '=http' --connect-timeout 5 --max-time 180 -fsS -o "$MOUNT/big-downloaded.bin" "$url"
 cmp "$WORK/big.bin" "$WORK/big-downloaded.bin"
 echo "100 MB download matches upload: OK"
