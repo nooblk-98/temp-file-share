@@ -1,0 +1,34 @@
+version: 2
+updates:
+  - package-ecosystem: github-actions
+    directory: /
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "ci"
+    groups:
+      actions:
+        patterns: ["*"]
+
+  - package-ecosystem: docker
+    directory: /app
+    schedule:
+      interval: weekly
+    cooldown:
+      default-days: 7
+    commit-message:
+      prefix: "build"
+    # Both FROM lines move together in one PR so builder and runtime keep the
+    # same Alpine minor (musl/libssl ABI).
+    groups:
+      base-images:
+        patterns: ["*"]
+    ignore:
+      # app.py imports `cgi`, which was removed in Python 3.13.
+      - dependency-name: "python"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
+      # Alpine minor bumps are done by hand, in both stages at once.
+      - dependency-name: "alpine"
+        update-types: ["version-update:semver-major", "version-update:semver-minor"]
