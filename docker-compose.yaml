@@ -1,7 +1,6 @@
 services:
   backend:
     build: ./app
-    image: ghcr.io/nooblk-98/temp-file-share:${TAG:-latest}
     ports:
       - '${HOST_PORT:-34100}:54000'
     volumes:
