@@ -42,4 +42,6 @@ The baseline uploads page publishes all three records plus IP/country fields. Th
 4. Start the changed code with installed requirements, `PORT=54001`, its own absolute storage paths, and `PUBLIC_BASE_URL=http://127.0.0.1:54001`.
 5. Run `npm ci --prefix tests/browser`, `npx --prefix tests/browser playwright install chromium`, then `node tests/browser/capture-screenshots.js`. `BASELINE_URL`/`CURRENT_URL` can override local origins.
 
+The README uses `*-rounded.svg` presentation wrappers to clip the original PNGs to rounded corners. The PNG pixels and baseline comparison assets are unchanged. The wrappers embed their source PNG so they render as standalone images on GitHub.
+
 The native SVG repository banner is a separate illustration, not a UI screenshot.

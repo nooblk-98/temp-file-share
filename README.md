@@ -33,24 +33,24 @@ Actual locally rendered application pages, using synthetic files—not design mo
 
 ### Browser upload · light
 
-![Browser upload in the light theme](docs/ui-review/after-home-light.png)
+![Browser upload in the light theme](docs/ui-review/after-home-light-rounded.svg)
 
 <details>
 <summary><strong>Dark theme, uploads page, and mobile</strong></summary>
 
 ### Browser upload · dark
 
-![Browser upload in the dark theme](docs/ui-review/after-home-dark.png)
+![Browser upload in the dark theme](docs/ui-review/after-home-dark-rounded.svg)
 
 ### Your uploads
 
 Only uploads associated with the visitor's current IP are shown. Filenames link to downloads; public IP/country columns have been removed.
 
-![Your uploads page](docs/ui-review/after-uploads-light.png)
+![Your uploads page](docs/ui-review/after-uploads-light-rounded.svg)
 
 ### Mobile · 390 px
 
-<img src="docs/ui-review/after-home-mobile.png" width="390" alt="Mobile browser upload page" />
+<img src="docs/ui-review/after-home-mobile-rounded.svg" width="390" alt="Mobile browser upload page" />
 
 </details>
 
