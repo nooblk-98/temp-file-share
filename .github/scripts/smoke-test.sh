@@ -37,7 +37,7 @@ docker run -d --name "$NAME" \
   --cap-drop ALL --security-opt no-new-privileges:true \
   -p "127.0.0.1:${PORT}:54000" \
   -v "$MOUNT/uploads:/app/uploads" -v "$MOUNT/data:/app/data" \
-  -e RATE_LIMIT_SECONDS=0 -e GEO_IP_ENABLED=false \
+  -e RATE_LIMIT_SECONDS=0 \
   -e PUBLIC_BASE_URL="http://127.0.0.1:${PORT}" \
   "$IMAGE" >/dev/null
 
@@ -70,8 +70,7 @@ curl -fsS -o "$MOUNT/downloaded.bin" "$url"
 cmp "$WORK/payload.bin" "$WORK/downloaded.bin"
 echo "download matches upload: OK"
 
-# Same /tmp (named volume) and memory limit as docker-compose.yaml: the app
-# buffers uploads in memory and spools to /tmp, so a large file must still work.
+# Same memory limit as Compose: streaming must keep large transfers bounded.
 echo "== 100 MB upload / download round trip"
 head -c 104857600 /dev/urandom > "$WORK/big.bin"
 resp="$(curl -fsS -F "file=@$MOUNT/big.bin;filename=big.bin" "http://127.0.0.1:${PORT}/upload")"

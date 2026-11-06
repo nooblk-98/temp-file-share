@@ -1,1 +1,1 @@
-# No external dependencies -- pure Python stdlib
+python-multipart==0.0.33

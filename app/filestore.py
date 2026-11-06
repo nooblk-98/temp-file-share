@@ -1,192 +1,184 @@
 from __future__ import annotations
 
+import contextlib
 import json
 import logging
 import os
+import tempfile
+import threading
 import time
-from typing import Protocol
+from pathlib import Path
+from typing import BinaryIO, Iterator
 
-from _types import IPAddress, FileEntry
+from models import FileEntry, IPAddress
 
 logger = logging.getLogger("temp-file-share")
 
 
-class FileStore(Protocol):
-    def store(self, ip: str, filename: str, data: bytes) -> FileEntry: ...
-
-    def retrieve(self, uuid_name: str) -> bytes | None: ...
-
-    def delete_by_ip(self, ip: str) -> int: ...
-
-    def delete_expired(self, max_age_seconds: float) -> int: ...
-
-    def list_by_ip(self, ip: str) -> list[FileEntry]: ...
-
-    def used_bytes(self) -> int: ...
-
-    def used_bytes_by_ip(self, ip: str) -> int: ...
-
-    def entries(self) -> dict[IPAddress, list[FileEntry]]: ...
+class QuotaExceeded(ValueError):
+    pass
 
 
 class DiskFileStore:
+    """Single-process store. One lock covers every metadata read/modify/write."""
+
     def __init__(self, upload_dir: str, files_db: str) -> None:
-        self._upload_dir = upload_dir
-        self._files_db = files_db
-        os.makedirs(upload_dir, exist_ok=True)
-        os.makedirs(os.path.dirname(files_db), exist_ok=True)
+        self._upload_dir = Path(upload_dir).resolve()
+        self._files_db = Path(files_db)
+        self._upload_dir.mkdir(parents=True, exist_ok=True)
+        self._files_db.parent.mkdir(parents=True, exist_ok=True)
+        self._lock = threading.RLock()
+        self._reservations: dict[str, int] = {}
+        # Fail closed on corruption: do not silently forget ownership/expiry.
+        with self._lock:
+            self._load_db()
+        # Only one server process may own this store. Remove interrupted uploads.
+        for path in self._upload_dir.glob(".incoming-*"):
+            path.unlink()
 
     def _load_db(self) -> dict[IPAddress, list[FileEntry]]:
-        if not os.path.exists(self._files_db):
+        if not self._files_db.exists():
             return {}
-        try:
-            with open(self._files_db) as f:
-                raw: dict[str, list[dict[str, object]]] = json.load(f)
-        except json.JSONDecodeError:
-            logger.warning("corrupt db, resetting")
-            return {}
-        result: dict[IPAddress, list[FileEntry]] = {}
-        for ip, entries in raw.items():
-            result[IPAddress(ip)] = [
-                FileEntry(
-                    filename=str(e.get("filename", "")),
-                    size=int(e.get("size", 0)),
-                    time=float(e.get("time", 0.0)),
-                )
-                for e in entries
+        with self._files_db.open(encoding="utf-8") as stream:
+            raw = json.load(stream)
+        return {
+            IPAddress(ip): [
+                FileEntry(str(e["filename"]), int(e["size"]), float(e["time"])) for e in entries
             ]
-        return result
+            for ip, entries in raw.items()
+        }
 
     def _save_db(self, db: dict[IPAddress, list[FileEntry]]) -> None:
-        raw: dict[str, list[dict[str, object]]] = {
-            ip: [
-                {"filename": e.filename, "size": e.size, "time": e.time}
-                for e in entries
-            ]
-            for ip, entries in db.items()
-        }
-        with open(self._files_db, "w") as f:
-            json.dump(raw, f)
+        raw = {ip: [vars(entry) for entry in entries] for ip, entries in db.items()}
+        fd, name = tempfile.mkstemp(prefix=".metadata-", dir=self._files_db.parent)
+        try:
+            with os.fdopen(fd, "w", encoding="utf-8") as stream:
+                json.dump(raw, stream)
+                stream.flush()
+                os.fsync(stream.fileno())
+            os.replace(name, self._files_db)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
 
-    def store(self, ip: str, filename: str, data: bytes) -> FileEntry:
-        db = self._load_db()
-        filepath = os.path.join(self._upload_dir, filename)
-        with open(filepath, "wb") as f:
-            f.write(data)
-        entry = FileEntry(filename=filename, size=len(data), time=time.time())
-        ip_files = db.get(IPAddress(ip), [])
-        ip_files.append(entry)
-        db[IPAddress(ip)] = ip_files
-        self._save_db(db)
-        return entry
-
-    def retrieve(self, uuid_name: str) -> bytes | None:
-        filepath = os.path.join(self._upload_dir, uuid_name)
-        if not os.path.exists(filepath):
+    def _safe_path(self, name: str) -> Path | None:
+        if not name or name in (".", "..") or any(c in name for c in ("/", "\\", "\x00")):
             return None
-        with open(filepath, "rb") as f:
-            return f.read()
+        path = self._upload_dir / name
+        if path.is_symlink() or path.resolve().parent != self._upload_dir:
+            return None
+        return path
 
-    def delete_by_ip(self, ip: str) -> int:
-        db = self._load_db()
-        ip_files = db.pop(IPAddress(ip), [])
-        count = 0
-        for entry in ip_files:
-            filepath = os.path.join(self._upload_dir, entry.filename)
-            if os.path.exists(filepath):
-                try:
-                    os.remove(filepath)
-                    count += 1
-                except OSError:
-                    pass
-        self._save_db(db)
-        return count
+    @contextlib.contextmanager
+    def reserve(self, ip: str, size: int, total_limit: int, ip_limit: int) -> Iterator[None]:
+        """Reserve the request length before reading; includes multipart overhead."""
+        with self._lock:
+            if self.used_bytes() + sum(self._reservations.values()) + size > total_limit:
+                raise QuotaExceeded("Not enough allocated space")
+            if self.used_bytes_by_ip(ip) + self._reservations.get(ip, 0) + size > ip_limit:
+                raise QuotaExceeded("IP limit exceeded. Clear your uploads and retry.")
+            self._reservations[ip] = self._reservations.get(ip, 0) + size
+        try:
+            yield
+        finally:
+            with self._lock:
+                self._reservations[ip] -= size
+                if not self._reservations[ip]:
+                    del self._reservations[ip]
 
-    def delete_expired(self, max_age_seconds: float) -> int:
-        db = self._load_db()
-        now = time.time()
-        removed = 0
-        for ip, files in list(db.items()):
-            kept: list[FileEntry] = []
-            for entry in files:
-                filepath = os.path.join(self._upload_dir, entry.filename)
-                if os.path.exists(filepath) and now - entry.time > max_age_seconds:
-                    os.remove(filepath)
-                    removed += 1
-                else:
-                    kept.append(entry)
-            if kept:
-                db[ip] = kept
-            else:
-                del db[ip]
-        self._save_db(db)
-        return removed
-
-    def list_by_ip(self, ip: str) -> list[FileEntry]:
-        return list(self._load_db().get(IPAddress(ip), []))
-
-    def used_bytes(self) -> int:
-        total = 0
-        for fname in os.listdir(self._upload_dir):
-            fpath = os.path.join(self._upload_dir, fname)
-            if os.path.isfile(fpath):
-                total += os.path.getsize(fpath)
-        return total
-
-    def used_bytes_by_ip(self, ip: str) -> int:
-        return sum(f.size for f in self.list_by_ip(ip))
-
-    def entries(self) -> dict[IPAddress, list[FileEntry]]:
-        return self._load_db()
-
-
-class InMemoryFileStore:
-    def __init__(self) -> None:
-        self._files: dict[str, bytes] = {}
-        self._entries: dict[IPAddress, list[FileEntry]] = {}
+    def commit(self, ip: str, filename: str, temporary: str) -> FileEntry:
+        with self._lock:
+            path = self._safe_path(filename)
+            if path is None or path.exists():
+                raise ValueError("Invalid or existing filename")
+            db = self._load_db()
+            entry = FileEntry(filename, os.path.getsize(temporary), time.time())
+            os.replace(temporary, path)
+            db.setdefault(IPAddress(ip), []).append(entry)
+            try:
+                self._save_db(db)
+            except Exception:
+                path.unlink(missing_ok=True)
+                raise
+            return entry
 
     def store(self, ip: str, filename: str, data: bytes) -> FileEntry:
-        self._files[filename] = data
-        entry = FileEntry(filename=filename, size=len(data), time=time.time())
-        ip_files = self._entries.get(IPAddress(ip), [])
-        ip_files.append(entry)
-        self._entries[IPAddress(ip)] = ip_files
-        return entry
+        """Fixture/convenience API; HTTP uploads use a streamed temporary file."""
+        fd, name = tempfile.mkstemp(prefix=".incoming-", dir=self._upload_dir)
+        try:
+            with os.fdopen(fd, "wb") as stream:
+                stream.write(data)
+            return self.commit(ip, filename, name)
+        finally:
+            if os.path.exists(name):
+                os.unlink(name)
 
-    def retrieve(self, uuid_name: str) -> bytes | None:
-        return self._files.get(uuid_name)
+    def open_download(self, filename: str, max_age_seconds: float) -> BinaryIO | None:
+        with self._lock:
+            path = self._safe_path(filename)
+            if path is None:
+                return None
+            entries = (e for files in self._load_db().values() for e in files)
+            if not any(
+                e.filename == filename and time.time() - e.time <= max_age_seconds for e in entries
+            ):
+                return None
+            try:
+                return path.open("rb")
+            except (FileNotFoundError, IsADirectoryError):
+                return None
 
     def delete_by_ip(self, ip: str) -> int:
-        ip_files = self._entries.pop(IPAddress(ip), [])
-        for entry in ip_files:
-            self._files.pop(entry.filename, None)
-        return len(ip_files)
+        with self._lock:
+            db = self._load_db()
+            entries = db.pop(IPAddress(ip), [])
+            for entry in entries:
+                path = self._safe_path(entry.filename)
+                if path is not None:
+                    path.unlink(missing_ok=True)
+            if entries:
+                self._save_db(db)
+            return len(entries)
 
     def delete_expired(self, max_age_seconds: float) -> int:
-        now = time.time()
-        removed = 0
-        for ip, files in list(self._entries.items()):
-            kept: list[FileEntry] = []
-            for entry in files:
-                if now - entry.time > max_age_seconds:
-                    self._files.pop(entry.filename, None)
-                    removed += 1
+        with self._lock:
+            db = self._load_db()
+            now = time.time()
+            removed = 0
+            for ip, files in list(db.items()):
+                kept = []
+                for entry in files:
+                    path = self._safe_path(entry.filename)
+                    if path is None or not path.is_file() or now - entry.time > max_age_seconds:
+                        if path is not None:
+                            path.unlink(missing_ok=True)
+                        removed += 1
+                    else:
+                        kept.append(entry)
+                if kept:
+                    db[ip] = kept
                 else:
-                    kept.append(entry)
-            if kept:
-                self._entries[ip] = kept
-            else:
-                del self._entries[ip]
-        return removed
+                    del db[ip]
+            if removed:
+                self._save_db(db)
+            return removed
 
     def list_by_ip(self, ip: str) -> list[FileEntry]:
-        return list(self._entries.get(IPAddress(ip), []))
+        with self._lock:
+            return list(self._load_db().get(IPAddress(ip), []))
 
     def used_bytes(self) -> int:
-        return sum(len(d) for d in self._files.values())
+        with self._lock:
+            return sum(
+                p.stat().st_size
+                for p in self._upload_dir.iterdir()
+                if p.is_file() and not p.name.startswith(".incoming-")
+            )
 
     def used_bytes_by_ip(self, ip: str) -> int:
-        return sum(f.size for f in self.list_by_ip(ip))
+        with self._lock:
+            return sum(e.size for e in self.list_by_ip(ip))
 
     def entries(self) -> dict[IPAddress, list[FileEntry]]:
-        return {ip: list(files) for ip, files in self._entries.items()}
+        with self._lock:
+            return self._load_db()
