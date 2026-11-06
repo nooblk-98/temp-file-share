@@ -1,0 +1,51 @@
+# Local source build. Uses the same Dockerfile as registry images; no registry login.
+name: temp-file-share-source
+
+services:
+  backend:
+    build:
+      context: ./app
+      dockerfile: Dockerfile
+    image: ${SOURCE_IMAGE:-temp-file-share:source}
+    ports:
+      - '${SOURCE_HOST_BIND:-127.0.0.1}:${SOURCE_HOST_PORT:-34102}:54000'
+    volumes:
+      # Must be writable by uid/gid 10001 (the container's non-root user).
+      - '${SOURCE_UPLOADS_HOST_DIR:-/opt/temp-file-share-source/uploads}:/app/uploads'
+      - '${SOURCE_DATA_HOST_DIR:-/opt/temp-file-share-source/data}:/app/data'
+      # Uploads stream to temporary files on the uploads filesystem.
+      - 'tmp-source:/tmp'
+    container_name: temp-file-share-source
+    restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${MEM_LIMIT:-512m}
+    memswap_limit: ${MEM_LIMIT:-512m}
+    cpus: ${CPU_LIMIT:-1.0}
+    pids_limit: ${PIDS_LIMIT:-256}
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    environment:
+      TZ: ${TZ:-Asia/Colombo}
+      UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
+      MAX_STORAGE_GB: ${MAX_STORAGE_GB:-50}
+      MAX_AGE_HOURS: ${MAX_AGE_HOURS:-5}
+      IP_LIMIT_GB: ${IP_LIMIT_GB:-10}
+      PUBLIC_BASE_URL: ${SOURCE_PUBLIC_BASE_URL:-http://localhost:34102}
+      FILES_DB: ${FILES_DB:-data/files_db.json}
+      RATE_LIMIT_SECONDS: ${RATE_LIMIT_SECONDS:-2}
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+      TRUSTED_PROXIES: ${SOURCE_TRUSTED_PROXIES:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-1024}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-30}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-16}
+
+volumes:
+  tmp-source: {}

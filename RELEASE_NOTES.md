@@ -1,5 +1,31 @@
 # Release notes
 
+## v2.2.0 — GHCR image channels and deployment organization
+
+### Container publishing
+
+- Publish a commit-specific GHCR image for every successful push to `development`; promote the tested current branch head to the `development` channel.
+- Publish stable version tags only from a published stable GitHub release whose commit belongs to `main`. Promote the latest stable release to `live` and `latest` after image smoke tests.
+- Build linux/amd64 and linux/arm64 images with provenance and SBOM metadata, using the same Dockerfile for both channels and source builds.
+- Authenticate with the repository-scoped `GITHUB_TOKEN`; no Docker Hub credentials or long-lived package token is required.
+- Trigger stable Portainer redeployment only after the live image is available. Separate development-stack deployment is opt-in to avoid redeploying production with a development webhook.
+
+### Deployment and documentation
+
+- Make `docker-compose.yaml` pull the stable `live` image instead of building on the server.
+- Add `docker-compose.dev.yaml` for the development image and `docker-compose.source.yaml` for local source builds, with independent default ports, storage, project names, and container names.
+- Add a stable-image one-command deployment to the main README and document pinning, rollback, image automation, and source builds separately.
+- Add `CONTRIBUTING.md` and a Contributions welcome section.
+- Pin Actions to full commit SHAs, refresh the official build Actions, and use Ubuntu 24.04 for reproducible browser dependencies.
+
+### Upgrade from v2.1.0
+
+- The stable stack retains `/opt/temp-file-share/uploads`, `/opt/temp-file-share/data`, port 34100, uid/gid 10001, and all resource/security controls. Keep your existing `.env` and Portainer stack environment settings, especially the proxy-reachable `HOST_BIND` and exact `TRUSTED_PROXIES`.
+- Replace `docker compose up -d --build` with `docker compose up -d --pull always` for the stable image. The source-build command is now `docker compose -f docker-compose.source.yaml up -d --build`.
+- The alternative stacks use their own storage by default; they do not silently reuse or move production uploads. Review their documented environment variables before deployment.
+- For a Portainer Git stack, select the matching Compose filename and re-pull its image when redeploying. Use a separate stack/webhook for development; do not reuse the live stack webhook.
+- Earlier source-only releases remain available by tag; no existing Git tags are moved.
+
 ## v2.1.0 — 2026-11-06
 
 Security, reliability, and documentation refresh.

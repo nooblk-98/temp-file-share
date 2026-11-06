@@ -1,39 +1,31 @@
 name: Deploy development to Portainer
 
 on:
-  push:
-    branches: [development]
-  workflow_dispatch:
+  workflow_call:
+    secrets:
+      WEBHOOK_URL:
+        required: true
 
-permissions:
-  contents: read
+permissions: {}
 
 concurrency:
   group: portainer-development
   cancel-in-progress: false
 
 jobs:
-  verify:
-    if: github.ref == 'refs/heads/development'
-    uses: ./.github/workflows/ci.yml
-
   deploy:
-    name: Redeploy development stack
-    needs: verify
-    if: github.ref == 'refs/heads/development'
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Trigger Portainer webhook
+      - name: Trigger Portainer after image publication
         env:
-          WEBHOOK_URL: ${{ secrets.PORTAINER_DEVELOPMENT_WEBHOOK_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           set -euo pipefail
           if [ -z "${WEBHOOK_URL:-}" ]; then
-            echo "::error::PORTAINER_DEVELOPMENT_WEBHOOK_URL is not configured"
+            echo "::error::The development stack webhook is not configured"
             exit 1
           fi
-          # Do not print the credential-bearing URL or Portainer response.
           curl --fail --silent --show-error --output /dev/null \
             --connect-timeout 10 --max-time 60 --request POST "$WEBHOOK_URL"
           echo "Portainer accepted the development deployment webhook."

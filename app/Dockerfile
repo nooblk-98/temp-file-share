@@ -64,7 +64,7 @@ LABEL org.opencontainers.image.title="temp-file-share" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
 # libssl3/libcrypto3 -> ssl+hashlib, libffi -> ctypes, libuuid -> uuid,
-# zlib -> zipimport/gzip, ca-certificates -> outbound TLS from georesolver,
+# zlib -> zipimport/gzip, ca-certificates -> standard-library HTTPS support,
 # tzdata -> makes the TZ env var take effect. `apk upgrade` pulls security
 # fixes published since the pinned base; apk-tools is removed afterwards so the
 # runtime image cannot install packages.

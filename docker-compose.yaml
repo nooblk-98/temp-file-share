@@ -1,6 +1,10 @@
+# Stable release image. No build or source checkout required.
+name: temp-file-share
+
 services:
   backend:
-    build: ./app
+    image: ${IMAGE_REPOSITORY:-ghcr.io/nooblk-98/temp-file-share}:${IMAGE_TAG:-live}
+    pull_policy: always
     ports:
       - '${HOST_BIND:-127.0.0.1}:${HOST_PORT:-34100}:54000'
     volumes:

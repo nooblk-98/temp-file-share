@@ -1,0 +1,107 @@
+name: Publish release image
+
+on:
+  release:
+    types: [published]
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: Existing published stable release tag (vX.Y.Z)
+        required: true
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  prepare:
+    if: github.event_name == 'workflow_dispatch' || !github.event.release.prerelease
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    outputs:
+      source_sha: ${{ steps.release.outputs.source_sha }}
+      tag: ${{ steps.release.outputs.tag }}
+      version: ${{ steps.release.outputs.version }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
+        with:
+          ref: main
+          fetch-depth: 0
+      - name: Validate a published release whose commit is on main
+        id: release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ github.event.release.tag_name || inputs.tag }}
+        run: |
+          set -euo pipefail
+          if [[ ! "$RELEASE_TAG" =~ ^v[0-9]+\.[0-9]+\.[0-9]+$ ]]; then
+            echo "::error::Expected a stable vX.Y.Z release tag"
+            exit 1
+          fi
+          gh api "repos/${GITHUB_REPOSITORY}/releases/tags/${RELEASE_TAG}" \
+            --jq 'select(.draft == false and .prerelease == false) | .tag_name' | grep -Fx "$RELEASE_TAG"
+          source_sha=$(git rev-parse "${RELEASE_TAG}^{commit}")
+          git merge-base --is-ancestor "$source_sha" origin/main
+          {
+            echo "source_sha=$source_sha"
+            echo "tag=$RELEASE_TAG"
+            echo "version=${RELEASE_TAG#v}"
+          } >> "$GITHUB_OUTPUT"
+
+  verify:
+    needs: prepare
+    uses: ./.github/workflows/ci.yml
+    with:
+      source_ref: ${{ needs.prepare.outputs.source_sha }}
+
+  publish:
+    needs: [prepare, verify]
+    uses: ./.github/workflows/build-image.yml
+    with:
+      source_sha: ${{ needs.prepare.outputs.source_sha }}
+      channel: stable
+      version: ${{ needs.prepare.outputs.version }}
+      image_tags: |
+        ghcr.io/nooblk-98/temp-file-share:${{ needs.prepare.outputs.tag }}
+        ghcr.io/nooblk-98/temp-file-share:${{ needs.prepare.outputs.version }}
+
+  promote:
+    needs: [prepare, publish]
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    concurrency:
+      group: ghcr-stable-channel
+      cancel-in-progress: false
+    outputs:
+      promoted: ${{ steps.promote.outputs.promoted }}
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote only the latest published stable release
+        id: promote
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          RELEASE_TAG: ${{ needs.prepare.outputs.tag }}
+          IMAGE_DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          latest=$(gh api "repos/${GITHUB_REPOSITORY}/releases/latest" --jq '.tag_name')
+          if [ "$latest" != "$RELEASE_TAG" ]; then
+            echo "Versioned image published; preserving the newer live release."
+            exit 0
+          fi
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker buildx imagetools create --tag "$image:live" --tag "$image:latest" "$image@$IMAGE_DIGEST"
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: promote
+    if: needs.promote.outputs.promoted == 'true'
+    uses: ./.github/workflows/deploy.yml
+    secrets:
+      WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
