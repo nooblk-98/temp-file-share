@@ -58,6 +58,7 @@ const clearUploadsStatus = document.querySelector('[data-clear-status]');
 
 const uploadItems = [];
 let isUploading = false;
+const maxUploadBytes = Number(document.querySelector('[data-max-upload-mb]')?.dataset.maxUploadMb || 1024) * 1024 ** 2;
 
 const formatBytes = (bytes) => {
     if (!bytes) return '0 B';
@@ -74,13 +75,15 @@ const formatBytes = (bytes) => {
 const setStatus = (text, isError = false) => {
     if (!uploadStatus) return;
     uploadStatus.textContent = text;
-    uploadStatus.style.color = isError ? '#b71c1c' : '';
+    uploadStatus.classList.toggle('is-error', isError);
 };
 
 const updateControls = () => {
     const hasItems = uploadItems.length > 0;
     if (uploadBtn) uploadBtn.disabled = !hasItems || isUploading;
     if (clearBtn) clearBtn.disabled = !hasItems || isUploading;
+    if (pickBtn) pickBtn.disabled = isUploading;
+    if (fileInput) fileInput.disabled = isUploading;
 };
 
 const renderUploads = () => {
@@ -155,13 +158,16 @@ const updateItem = (id, updates) => {
 };
 
 const addFiles = (fileList) => {
+    if (isUploading) return;
     const files = Array.from(fileList || []);
     if (!files.length) return;
     files.forEach((file) => {
         uploadItems.push({
             id: `${Date.now()}-${Math.random().toString(16).slice(2)}`,
             file,
-            status: 'Ready',
+            status: file.size > maxUploadBytes ? 'File exceeds upload limit' : 'Ready',
+            error: file.size > maxUploadBytes,
+            tooLarge: file.size > maxUploadBytes,
             progress: 0,
             link: ''
         });
@@ -186,12 +192,13 @@ const extractErrorMessage = (xhr) => {
     return raw.split('\n')[0];
 };
 
-const uploadSingle = (item) => new Promise((resolve) => {
+const uploadSingle = (item, attempt = 0) => new Promise((resolve) => {
     const formData = new FormData();
     formData.append('file', item.file, item.file.name);
 
     const xhr = new XMLHttpRequest();
     xhr.open('POST', '/upload');
+    xhr.timeout = 15 * 60 * 1000;
     const startedAt = Date.now();
     let lastLoaded = 0;
     let lastTick = startedAt;
@@ -209,6 +216,13 @@ const uploadSingle = (item) => new Promise((resolve) => {
     });
 
     xhr.addEventListener('load', () => {
+        if (xhr.status === 429 && attempt < 3) {
+            const seconds = Number(xhr.getResponseHeader('Retry-After'));
+            const delay = Number.isFinite(seconds) && seconds > 0 ? Math.min(seconds, 300) : 2;
+            updateItem(item.id, { status: `Waiting ${delay}s for upload cooldown`, progress: 0 });
+            setTimeout(() => resolve(uploadSingle(item, attempt + 1)), delay * 1000);
+            return;
+        }
         if (xhr.status === 200) {
             const lines = xhr.responseText.trim().split('\n');
             const link = lines[0] || '';
@@ -221,11 +235,14 @@ const uploadSingle = (item) => new Promise((resolve) => {
         resolve();
     });
 
-    xhr.addEventListener('error', () => {
+    const fail = () => {
         updateItem(item.id, { status: 'Upload failed', progress: 0, error: true });
         setStatus('Upload failed. Please try again.', true);
         resolve();
-    });
+    };
+    xhr.addEventListener('error', fail);
+    xhr.addEventListener('timeout', fail);
+    xhr.addEventListener('abort', fail);
 
     updateItem(item.id, { status: 'Starting', progress: 0 });
     xhr.send(formData);
@@ -238,12 +255,13 @@ const uploadQueue = async () => {
     updateControls();
 
     for (const item of uploadItems) {
-        if (item.status === 'Uploaded') continue;
+        if (item.status === 'Uploaded' || item.tooLarge) continue;
         await uploadSingle(item);
     }
 
     isUploading = false;
-    setStatus('Uploads complete.');
+    const failed = uploadItems.filter((item) => item.error).length;
+    setStatus(failed ? `${failed} file(s) failed. Retry uploads or remove oversized files.` : 'Uploads complete.', failed);
     updateControls();
 };
 
@@ -301,7 +319,7 @@ if (clearUploadsBtn) {
         clearUploadsBtn.disabled = true;
         if (clearUploadsStatus) {
             clearUploadsStatus.textContent = 'Clearing uploads...';
-            clearUploadsStatus.style.color = '';
+            clearUploadsStatus.classList.remove('is-error');
         }
         try {
             const response = await fetch('/clear', { method: 'POST' });
@@ -311,11 +329,13 @@ if (clearUploadsBtn) {
             }
             if (clearUploadsStatus) {
                 clearUploadsStatus.textContent = text || 'Uploads cleared.';
+                const tableBody = document.querySelector('.recent-table tbody');
+                if (tableBody) tableBody.innerHTML = '<tr><td colspan="4">No uploads from your IP yet.</td></tr>';
             }
         } catch (error) {
             if (clearUploadsStatus) {
                 clearUploadsStatus.textContent = error.message || 'Failed to clear uploads.';
-                clearUploadsStatus.style.color = '#b71c1c';
+                clearUploadsStatus.classList.add('is-error');
             }
         } finally {
             clearUploadsBtn.disabled = false;

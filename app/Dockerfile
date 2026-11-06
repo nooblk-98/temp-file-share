@@ -3,12 +3,11 @@
 # ---------------------------------------------------------------------------
 # Stage 1: builder -- assemble the app payload and a trimmed CPython runtime.
 #
-# The app is pure stdlib, so there is nothing to install; the whole size win
+# The app uses one pure-Python streaming parser; the size win
 # comes from (a) alpine instead of debian-slim and (b) dropping the parts of
 # CPython this service never imports.
 #
-# Pinned to 3.12: app.py imports `cgi` for multipart uploads, and `cgi` was
-# removed in Python 3.13.
+# Keep the deployed runtime on Python 3.12; source also supports newer Python.
 #
 # Both stages use the SAME Alpine minor (3.23) so the builder's musl/libssl ABI
 # matches the runtime. Bump the two FROM lines together; Dependabot will
@@ -21,7 +20,10 @@ ENV PYTHONDONTWRITEBYTECODE=1
 
 WORKDIR /app
 
-COPY backend.py app.py config.py _types.py filestore.py georesolver.py ratelimiter.py config.json ./
+COPY requirements.txt ./
+RUN pip install --no-cache-dir --no-compile --target=/app/vendor -r requirements.txt
+
+COPY backend.py app.py config.py models.py filestore.py uploads.py ratelimiter.py config.json ./
 COPY templates ./templates
 COPY static ./static
 COPY scripts ./scripts
@@ -57,7 +59,7 @@ WORKDIR /app
 FROM alpine:3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
 
 LABEL org.opencontainers.image.title="temp-file-share" \
-      org.opencontainers.image.description="Self-hosted temporary file sharing (pure-stdlib Python)" \
+      org.opencontainers.image.description="Self-hosted temporary file sharing (streaming Python)" \
       org.opencontainers.image.source="https://github.com/nooblk-98/temp-file-share" \
       org.opencontainers.image.licenses="AGPL-3.0-only"
 
@@ -93,7 +95,7 @@ RUN mkdir -p /app/uploads /app/data \
 
 ENV PYTHONDONTWRITEBYTECODE=1 \
     PYTHONUNBUFFERED=1 \
-    PYTHONPATH=/app
+    PYTHONPATH=/app:/app/vendor
 
 USER 10001:10001
 

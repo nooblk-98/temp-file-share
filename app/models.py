@@ -16,7 +16,11 @@ class Config:
     rate_limit_seconds: int
     cleanup_interval_seconds: int
     public_base_url: str
-    geo_ip_enabled: bool
+    trusted_proxies: tuple[str, ...] = ()
+    max_upload_mb: int = 1024
+    request_timeout_seconds: int = 30
+    max_connections: int = 16
+    port: int = 54000
 
 
 @dataclass(frozen=True)

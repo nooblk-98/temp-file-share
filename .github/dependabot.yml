@@ -26,9 +26,16 @@ updates:
       base-images:
         patterns: ["*"]
     ignore:
-      # app.py imports `cgi`, which was removed in Python 3.13.
+      # Runtime Python upgrades are tested separately before changing both stages.
       - dependency-name: "python"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
       # Alpine minor bumps are done by hand, in both stages at once.
       - dependency-name: "alpine"
         update-types: ["version-update:semver-major", "version-update:semver-minor"]
+
+  - package-ecosystem: pip
+    directory: /app
+    schedule:
+      interval: weekly
+    commit-message:
+      prefix: "deps"

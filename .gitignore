@@ -29,3 +29,9 @@ venv/
 
 # Test artifacts
 /tmp/
+
+# Browser test dependencies and generated reports
+node_modules/
+test-results/
+playwright-report/
+.ruff_cache/

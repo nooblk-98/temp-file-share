@@ -4,16 +4,16 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Uploads - File Upload Service</title>
-    <meta name="description" content="Browse currently stored uploads in the file upload service.">
-    <meta name="robots" content="index,follow">
+    <meta name="description" content="Manage files uploaded from your current IP address.">
+    <meta name="robots" content="noindex,nofollow">
     <link rel="canonical" href="{base_url}/uploads">
     <meta property="og:type" content="website">
     <meta property="og:title" content="Uploads - File Upload Service">
-    <meta property="og:description" content="Browse currently stored uploads in the file upload service.">
+    <meta property="og:description" content="Manage files uploaded from your current IP address.">
     <meta property="og:url" content="{base_url}/uploads">
     <meta name="twitter:card" content="summary">
     <meta name="twitter:title" content="Uploads - File Upload Service">
-    <meta name="twitter:description" content="Browse currently stored uploads in the file upload service.">
+    <meta name="twitter:description" content="Manage files uploaded from your current IP address.">
     <link rel="preconnect" href="https://fonts.googleapis.com">
     <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
     <link href="https://fonts.googleapis.com/css2?family=Red+Hat+Display:wght@400;500;600;700&display=swap" rel="stylesheet">
@@ -22,8 +22,8 @@
 <body>
     <div class="top-bar">
         <div>
-            <h1>Uploads</h1>
-            <p>All files currently stored on the server.</p>
+            <h1>Your uploads</h1>
+            <p>Files uploaded from your current IP address.</p>
         </div>
         <div class="top-actions">
             <a class="ghost-link" href="/">Back to home</a>
@@ -41,12 +41,13 @@
     <div class="section-card">
         <div class="section-header">
             <div>
-                <h2>All Files in Storage</h2>
-                <p>Clear removes uploads tied to your current IP.</p>
+                <h2>Files from your IP</h2>
+                <p>Shared network? Others on the same public IP share this list and quota.</p>
             </div>
             <button class="clear-btn" type="button" data-clear-uploads>Clear your uploads</button>
         </div>
-        <div class="upload-status" data-clear-status></div>
+        <div class="upload-status" data-clear-status role="status" aria-live="polite"></div>
+        <div class="table-scroll" role="region" aria-label="Your uploaded files" tabindex="0">
         <table class="recent-table">
             <thead>
                 <tr>
@@ -54,14 +55,13 @@
                     <th>Size</th>
                     <th>Uploaded</th>
                     <th>Expires</th>
-                    <th>IP</th>
-                    <th>Country</th>
                 </tr>
             </thead>
             <tbody>
                 {recent_uploads_html}
             </tbody>
         </table>
+        </div>
     </div>
 
     <footer>

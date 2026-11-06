@@ -2,13 +2,12 @@ services:
   backend:
     build: ./app
     ports:
-      - '${HOST_PORT:-34100}:54000'
+      - '${HOST_BIND:-127.0.0.1}:${HOST_PORT:-34100}:54000'
     volumes:
       # Must be writable by uid/gid 10001 (the container's non-root user).
       - '${UPLOADS_HOST_DIR:-/opt/temp-file-share/uploads}:/app/uploads'
       - '${DATA_HOST_DIR:-/opt/temp-file-share/data}:/app/data'
-      # /tmp holds spooled multipart uploads, so it must fit the largest upload
-      # (a 64 MB tmpfs broke uploads above that). Named volume, not tmpfs.
+      # Uploads stream to temporary files on the uploads filesystem.
       - 'tmp:/tmp'
     container_name: temp-file-share
     restart: unless-stopped
@@ -37,7 +36,10 @@ services:
       FILES_DB: ${FILES_DB:-data/files_db.json}
       RATE_LIMIT_SECONDS: ${RATE_LIMIT_SECONDS:-2}
       CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
-      GEO_IP_ENABLED: ${GEO_IP_ENABLED:-true}
+      TRUSTED_PROXIES: ${TRUSTED_PROXIES:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-1024}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-30}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-16}
 
 volumes:
   tmp: {}
