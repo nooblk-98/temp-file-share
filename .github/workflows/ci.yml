@@ -46,6 +46,7 @@ jobs:
 
   browser:
     runs-on: ubuntu-24.04
+    timeout-minutes: 15
     steps:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
@@ -61,7 +62,14 @@ jobs:
           cache-dependency-path: tests/browser/package-lock.json
       - run: npm ci
         working-directory: tests/browser
-      - run: npx playwright install --with-deps chromium
+      # Ubuntu 24.04 hosted runners already include Chrome runtime libraries.
+      - uses: actions/cache@55cc8345863c7cc4c66a329aec7e433d2d1c52a9 # v6.1.0
+        id: playwright-cache
+        with:
+          path: ~/.cache/ms-playwright
+          key: playwright-ubuntu24-${{ runner.arch }}-${{ hashFiles('tests/browser/package-lock.json') }}
+      - run: npx playwright install --only-shell chromium
+        if: steps.playwright-cache.outputs.cache-hit != 'true'
         working-directory: tests/browser
       - run: npm test
         working-directory: tests/browser
