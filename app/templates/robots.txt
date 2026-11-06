@@ -1,4 +1,6 @@
 User-agent: *
 Allow: /
+Disallow: /uploads
+Disallow: /download/
 
 Sitemap: {base_url}/sitemap.xml

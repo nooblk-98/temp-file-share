@@ -484,3 +484,30 @@ footer {
         max-width: 100%;
     }
 }
+
+/* Keep long file names and commands inside their cards at narrow widths. */
+*, *::before, *::after { box-sizing: border-box; }
+.top-bar > *, .drop-header > *, .upload-item, .upload-item-header > * { min-width: 0; }
+.top-actions, .upload-item-header { flex-wrap: wrap; }
+.upload-name { overflow-wrap: anywhere; white-space: normal; }
+.upload-meta { overflow-wrap: anywhere; }
+.table-scroll { max-width: 100%; overflow-x: auto; }
+.recent-table { min-width: 600px; }
+.recent-table td:first-child { max-width: 340px; overflow-wrap: anywhere; }
+pre { white-space: pre-wrap; overflow-wrap: anywhere; padding: 42px 12px 12px; }
+:root { --error: #b71c1c; --on-accent: #ffffff; }
+body[data-theme="dark"] { --error: #ff9b9b; --on-accent: #0c1115; }
+.upload-btn { color: var(--on-accent); }
+.upload-status.is-error, .upload-item.is-error .upload-meta { color: var(--error); }
+.pick-btn:disabled { cursor: not-allowed; opacity: 0.6; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 3px; }
+@media (max-width: 390px) {
+    body { padding: 22px 16px 40px; }
+    h1 { font-size: 29px; }
+    .upload-panel { padding: 14px; }
+    .section-card { padding: 14px; }
+}
+
+html { min-height: 100%; }
+body { min-height: 100vh; }
+.top-bar { margin-bottom: 20px; }

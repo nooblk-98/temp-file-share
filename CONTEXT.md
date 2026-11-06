@@ -1,29 +1,26 @@
-# temp-file-share Domain Context
+# temp-file-share domain context
 
-## Domain Vocabulary
+A single-process, bounded-threaded HTTP service for temporary browser/CLI file sharing. Python 3.11+; one runtime dependency (`python-multipart`). No separate database service or frontend build.
 
-- **Upload** — a file or tarball sent by a client via POST /upload, stored on disk with a UUID-prefixed filename, and made available for download.
-- **Download** — retrieving a stored file by its UUID-prefixed filename via GET /download/<filename>.
-- **IP Quota** — storage limit enforced per client IP address. Configurable via `IP_LIMIT_GB`.
-- **Expiry** — automatic deletion of uploads older than `MAX_AGE_HOURS`, enforced by a background cleanup thread.
-- **File Metadata** — the record of an upload: filename, size in bytes, upload timestamp. Persisted as JSON.
-- **Cleanup** — the background process that walks metadata, identifies expired entries, deletes the corresponding files, and persists the updated metadata.
+| Module | Responsibility |
+| --- | --- |
+| `app/app.py` | Routes, trusted-proxy identity, safe filenames, HTML, streamed downloads, bounded HTTP server |
+| `app/models.py` | Immutable configuration and file metadata types |
+| `app/config.py` | JSON/environment configuration and validation |
+| `app/filestore.py` | Confined storage, quota reservations, metadata lock/atomic replacement, expiry |
+| `app/uploads.py` | Bounded raw and multipart body ingestion |
+| `app/ratelimiter.py` | Thread-safe per-IP cooldown with expiring entries |
+| `app/backend.py` | Entry-point shim |
+| `app/scripts/upload.sh` | Bash/curl/tar client |
+| `tests/` | Backend security/regression tests and browser workflows |
 
-## Architecture
+## Invariants
 
-- **Monolithic backend** — all server logic in `app/app.py` (~388 lines), supported by extracted modules.
-- **Zero external dependencies** — Python stdlib only.
-- **Client upload script** — `upload.sh` (bash), uses `curl` and `tar`.
+- Downloads must name a recorded, unexpired, non-symlink file directly inside uploads.
+- Client IP comes from the socket unless that peer is an explicitly trusted proxy.
+- Quota is reserved for the complete Content-Length before reading; transfers use bounded chunks.
+- JSON read/modify/write and cleanup share one reentrant lock. Writes replace metadata atomically. One process per storage directory; no shared-volume replicas.
+- Lists and clear operations are IP-scoped, not authenticated. NAT/VPN peers share access.
+- Main deployment remains separate; development deployment runs only from development after reusable CI passes. Webhook credentials live only in GitHub Actions secrets.
 
-## Modules (post-refactor)
-
-| Module | Responsibility | Interface |
-|--------|---------------|-----------|
-| `app.py` | HTTP handler, routing, template rendering, entry point | `run(config_path?)` |
-| `_types.py` | Domain types shared across modules | `Config`, `FileEntry`, `IPAddress` |
-| `config.py` | Load and validate configuration from JSON | `load_config(base_dir) -> Config` |
-| `filestore.py` | File + metadata persistence | `FileStore` protocol — `DiskFileStore`, `InMemoryFileStore` |
-| `georesolver.py` | IP-to-country-code resolution | `GeoResolver` protocol — `HttpGeoResolver`, `NullGeoResolver` |
-| `ratelimiter.py` | Per-IP rate limiting | `RateLimiter.allow(ip) -> bool` |
-| `backend.py` | Entry-point shim | `from app import run; run()` |
-| `upload.sh` | Client-side CLI (single copy in `app/scripts/`) | CLI for `curl` + `tar` uploads |
+See README.md for operational configuration and RELEASE_NOTES.md for migrations.
