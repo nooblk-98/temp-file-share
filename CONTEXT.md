@@ -21,6 +21,9 @@ A single-process, bounded-threaded HTTP service for temporary browser/CLI file s
 - Quota is reserved for the complete Content-Length before reading; transfers use bounded chunks.
 - JSON read/modify/write and cleanup share one reentrant lock. Writes replace metadata atomically. One process per storage directory; no shared-volume replicas.
 - Lists and clear operations are IP-scoped, not authenticated. NAT/VPN peers share access.
-- Main deployment remains separate; development deployment runs only from development after reusable CI passes. Webhook credentials live only in GitHub Actions secrets.
+- Development pushes publish commit-specific GHCR images after CI; only the current head promotes the development channel.
+- Stable images publish only from stable GitHub releases on main; only the latest stable release promotes live/latest and triggers the main webhook.
+- Development Portainer deployment is opt-in after a separate stack/webhook is configured. Webhook credentials live only in GitHub Actions secrets.
+- Stable, development, and source Compose files have independent projects, containers, storage, and default ports. Preserve deployed bind/proxy environment settings.
 
 See README.md for operational configuration and RELEASE_NOTES.md for migrations.

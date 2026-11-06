@@ -1,0 +1,67 @@
+name: Publish development image
+
+on:
+  push:
+    branches: [development]
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  packages: write
+
+# Do not cancel/coalesce branch pushes: each commit must get its SHA image.
+jobs:
+  verify:
+    if: github.ref == 'refs/heads/development'
+    uses: ./.github/workflows/ci.yml
+    with:
+      source_ref: ${{ github.sha }}
+
+  publish:
+    needs: verify
+    uses: ./.github/workflows/build-image.yml
+    with:
+      source_sha: ${{ github.sha }}
+      channel: development
+      version: development-${{ github.sha }}
+      image_tags: ghcr.io/nooblk-98/temp-file-share:development-sha-${{ github.sha }}
+
+  promote:
+    needs: publish
+    runs-on: ubuntu-24.04
+    timeout-minutes: 5
+    concurrency:
+      group: ghcr-development-channel
+      cancel-in-progress: false
+    outputs:
+      promoted: ${{ steps.promote.outputs.promoted }}
+    steps:
+      - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069 # v4.4.1
+      - uses: docker/login-action@8aa5831fb8d48d8f76594c7ddde61ae58019f550 # v4.8.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Promote only the current development head
+        id: promote
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          SOURCE_SHA: ${{ github.sha }}
+          IMAGE_DIGEST: ${{ needs.publish.outputs.digest }}
+        run: |
+          set -euo pipefail
+          head=$(gh api "repos/${GITHUB_REPOSITORY}/git/ref/heads/development" --jq '.object.sha')
+          if [ "$head" != "$SOURCE_SHA" ]; then
+            echo "SHA image published; skipping channel promotion for a superseded commit."
+            exit 0
+          fi
+          image="ghcr.io/${GITHUB_REPOSITORY,,}"
+          docker buildx imagetools create --tag "$image:development" "$image@$IMAGE_DIGEST"
+          echo "promoted=true" >> "$GITHUB_OUTPUT"
+
+  deploy:
+    needs: promote
+    if: needs.promote.outputs.promoted == 'true' && vars.PORTAINER_DEVELOPMENT_ENABLED == 'true'
+    uses: ./.github/workflows/deploy-development.yml
+    secrets:
+      WEBHOOK_URL: ${{ secrets.PORTAINER_DEVELOPMENT_WEBHOOK_URL }}

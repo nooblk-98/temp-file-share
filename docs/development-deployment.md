@@ -1,7 +1,16 @@
-# Development deployment
+# Development deployment automation
 
-[Deploy development to Portainer](../.github/workflows/deploy-development.yml) runs on pushes to `development`, or manually when that branch is selected. It first calls the reusable [CI workflow](../.github/workflows/ci.yml); only successful checks trigger the stack webhook. Feature-branch pushes and PRs do not deploy.
+[Publish development image](../.github/workflows/publish-development.yml) builds every successful development commit regardless of whether a development stack is configured.
 
-Configure the GitHub repository secret **`PORTAINER_DEVELOPMENT_WEBHOOK_URL`** with the development stack's webhook. Configure that Portainer Git stack to track **`refs/heads/development`**, use `docker-compose.yaml`, and rebuild the source when redeploying. The webhook requests a redeploy; it does not change the stack's Git ref or configuration. The existing `main` deployment workflow and its `DEPLOY_WEBHOOK_URL` secret are separate and unchanged.
+Automatic development deployment is opt-in:
 
-No webhook URL is committed or printed. A successful webhook request means Portainer accepted it; confirm container health in Portainer after deployment.
+1. Create a separate Portainer Git stack tracking `refs/heads/development`, using `docker-compose.dev.yaml`, and enable re-pulling its GHCR image on redeploy.
+2. Verify its project/container/storage/port are separate from the live stack. Preserve any required private bind and exact proxy-trust settings as stack environment variables.
+3. Put that stack's webhook in repository Actions secret `PORTAINER_DEVELOPMENT_WEBHOOK_URL`.
+4. Set repository Actions variable `PORTAINER_DEVELOPMENT_ENABLED=true` only after verifying the webhook targets that separate stack.
+
+Until then, images still publish, but the development deploy job is skipped. Do not reuse the live stack's webhook: branch-triggered publication must not redeploy production.
+
+Stable deployment is called by the release image workflow after `live` is promoted, using `DEPLOY_WEBHOOK_URL`. The stable Portainer Git stack tracks `main`, uses `docker-compose.yaml`, and re-pulls the image. A push to main alone does not publish or deploy a stable image.
+
+The [reusable deployment workflow](../.github/workflows/deploy-development.yml) accepts its webhook only as a secret, never commits/prints it, and suppresses the response body. HTTP success is acceptance, not proof the stack or public hostname is healthy.
