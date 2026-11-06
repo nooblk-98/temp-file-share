@@ -6,7 +6,7 @@ services:
     image: ${IMAGE_REPOSITORY:-ghcr.io/nooblk-98/temp-file-share}:${DEV_IMAGE_TAG:-development}
     pull_policy: always
     ports:
-      - '${DEV_HOST_BIND:-127.0.0.1}:${DEV_HOST_PORT:-34101}:54000'
+      - '34101:54000'
     volumes:
       # Must be writable by uid/gid 10001 (the container's non-root user).
       - '${DEV_UPLOADS_HOST_DIR:-/opt/temp-file-share-dev/uploads}:/app/uploads'
