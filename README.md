@@ -8,7 +8,7 @@
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)](app/pyproject.toml)
 [![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](docker-compose.yaml)
-[![CI](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml/badge.svg?branch=development&event=pull_request)](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml)
+[![CI](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-0f6b5e)](LICENSE)
 
 [Live instance](https://fs.app.itsnooblk.com/) · [Quick start](#quick-start) · [Screenshots](#screenshots) · [Self-host](#self-host) · [Release notes](RELEASE_NOTES.md)
@@ -17,7 +17,7 @@
 
 Upload a file, copy its download link, and let the server clean it up later. Use drag-and-drop in the web UI, or send files and folders with the Bash client. No accounts, database service, or frontend build step.
 
-> **Development documentation:** this README describes the changes proposed for `development`. The live instance and previously published images may still run an older version. See [upgrade notes](RELEASE_NOTES.md#upgrade-notes) before deploying.
+> **Upgrading to v2.1.0?** Read the [upgrade notes](RELEASE_NOTES.md#upgrade-notes) for Python requirements, trusted proxy configuration, and storage migration. Previously published container images may still run an older version.
 
 ## At a glance
 
@@ -91,7 +91,7 @@ The client requires Bash, curl, and tar (GNU/Linux or macOS). Upload failures ex
 Compose builds the checked-out source. It does **not** pull a GHCR image or use a `TAG` variable.
 
 ```bash
-git clone --branch development https://github.com/nooblk-98/temp-file-share.git
+git clone --branch v2.1.0 https://github.com/nooblk-98/temp-file-share.git
 cd temp-file-share
 cp .env.example .env
 sudo mkdir -p /opt/temp-file-share/uploads /opt/temp-file-share/data
@@ -219,7 +219,7 @@ tests/                 Backend regression tests and Playwright browser checks
 docs/ui-review/        Real screenshots, provenance, before/after evidence
 .github/workflows/     CI, existing main deployment, development deployment
 docker-compose.yaml    Hardened source-build deployment
-RELEASE_NOTES.md        Unreleased changes and migration guidance
+RELEASE_NOTES.md        Release changes and migration guidance
 ```
 
 ## License

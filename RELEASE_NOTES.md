@@ -1,8 +1,10 @@
 # Release notes
 
-## Unreleased — security, reliability, and documentation refresh
+## v2.1.0 — 2026-11-06
 
-These changes are proposed for `development`; no GitHub release or version tag is created by this PR.
+Security, reliability, and documentation refresh.
+
+This release includes the security fixes, documentation refresh, hardened source-build deployment, and development automation delivered since v2.0.3.
 
 ### Security
 
