@@ -1,0 +1,49 @@
+# Development image. Separate port, container, and storage from the live stack.
+name: temp-file-share-dev
+
+services:
+  backend:
+    image: ${IMAGE_REPOSITORY:-ghcr.io/nooblk-98/temp-file-share}:${DEV_IMAGE_TAG:-development}
+    pull_policy: always
+    ports:
+      - '${DEV_HOST_BIND:-127.0.0.1}:${DEV_HOST_PORT:-34101}:54000'
+    volumes:
+      # Must be writable by uid/gid 10001 (the container's non-root user).
+      - '${DEV_UPLOADS_HOST_DIR:-/opt/temp-file-share-dev/uploads}:/app/uploads'
+      - '${DEV_DATA_HOST_DIR:-/opt/temp-file-share-dev/data}:/app/data'
+      # Uploads stream to temporary files on the uploads filesystem.
+      - 'tmp-development:/tmp'
+    container_name: temp-file-share-dev
+    restart: unless-stopped
+    read_only: true
+    init: true
+    cap_drop:
+      - ALL
+    security_opt:
+      - no-new-privileges:true
+    mem_limit: ${MEM_LIMIT:-512m}
+    memswap_limit: ${MEM_LIMIT:-512m}
+    cpus: ${CPU_LIMIT:-1.0}
+    pids_limit: ${PIDS_LIMIT:-256}
+    logging:
+      driver: json-file
+      options:
+        max-size: '10m'
+        max-file: '3'
+    environment:
+      TZ: ${TZ:-Asia/Colombo}
+      UPLOAD_DIR: ${UPLOAD_DIR:-uploads}
+      MAX_STORAGE_GB: ${MAX_STORAGE_GB:-50}
+      MAX_AGE_HOURS: ${MAX_AGE_HOURS:-5}
+      IP_LIMIT_GB: ${IP_LIMIT_GB:-10}
+      PUBLIC_BASE_URL: ${DEV_PUBLIC_BASE_URL:-http://localhost:34101}
+      FILES_DB: ${FILES_DB:-data/files_db.json}
+      RATE_LIMIT_SECONDS: ${RATE_LIMIT_SECONDS:-2}
+      CLEANUP_INTERVAL_SECONDS: ${CLEANUP_INTERVAL_SECONDS:-300}
+      TRUSTED_PROXIES: ${DEV_TRUSTED_PROXIES:-}
+      MAX_UPLOAD_MB: ${MAX_UPLOAD_MB:-1024}
+      REQUEST_TIMEOUT_SECONDS: ${REQUEST_TIMEOUT_SECONDS:-30}
+      MAX_CONNECTIONS: ${MAX_CONNECTIONS:-16}
+
+volumes:
+  tmp-development: {}

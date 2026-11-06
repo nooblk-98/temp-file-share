@@ -1,29 +1,31 @@
-name: Deploy
+name: Deploy stable to Portainer
 
 on:
-  push:
-    branches: [main]
-  workflow_dispatch: {}
+  workflow_call:
+    secrets:
+      WEBHOOK_URL:
+        required: true
 
 permissions: {}
 
 concurrency:
-  group: deploy-${{ github.workflow }}
+  group: portainer-stable
   cancel-in-progress: false
 
 jobs:
   deploy:
-    name: Trigger deployment webhook
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-24.04
     timeout-minutes: 5
     steps:
-      - name: Call deployment webhook
+      - name: Trigger Portainer after image publication
         env:
-          WEBHOOK_URL: ${{ secrets.DEPLOY_WEBHOOK_URL }}
+          WEBHOOK_URL: ${{ secrets.WEBHOOK_URL }}
         run: |
           set -euo pipefail
           if [ -z "${WEBHOOK_URL:-}" ]; then
-            echo "::error::DEPLOY_WEBHOOK_URL secret is not set"
+            echo "::error::The stable stack webhook is not configured"
             exit 1
           fi
-          curl -fsS -X POST "$WEBHOOK_URL"
+          curl --fail --silent --show-error --output /dev/null \
+            --connect-timeout 10 --max-time 60 --request POST "$WEBHOOK_URL"
+          echo "Portainer accepted the stable deployment webhook."

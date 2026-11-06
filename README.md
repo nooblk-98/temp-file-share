@@ -7,7 +7,7 @@
 **Self-hosted temporary file sharing, from your browser or terminal.**
 
 [![Python 3.11+](https://img.shields.io/badge/Python-3.11%2B-3776ab?logo=python&logoColor=white)](app/pyproject.toml)
-[![Docker](https://img.shields.io/badge/Docker-ready-2496ed?logo=docker&logoColor=white)](docker-compose.yaml)
+[![Container](https://img.shields.io/badge/GHCR-live-2496ed?logo=docker&logoColor=white)](https://github.com/nooblk-98/temp-file-share/pkgs/container/temp-file-share)
 [![CI](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml/badge.svg?branch=main&event=push)](https://github.com/nooblk-98/temp-file-share/actions/workflows/ci.yml)
 [![License: AGPL-3.0](https://img.shields.io/badge/License-AGPL--3.0-0f6b5e)](LICENSE)
 
@@ -17,13 +17,13 @@
 
 Upload a file, copy its download link, and let the server clean it up later. Use drag-and-drop in the web UI, or send files and folders with the Bash client. No accounts, database service, or frontend build step.
 
-> **Upgrading to v2.1.0?** Read the [upgrade notes](RELEASE_NOTES.md#upgrade-notes) for Python requirements, trusted proxy configuration, and storage migration. Previously published container images may still run an older version.
+> **Upgrading?** Read the [release notes](RELEASE_NOTES.md) before deployment. The default Compose stack now pulls the published `live` image; existing upload and metadata directories are preserved.
 
 ## At a glance
 
 | Share simply | Stay in control | Run it yourself |
 | --- | --- | --- |
-| Browser uploads with progress and copyable links | Configurable expiry, total storage, and per-IP quotas | Python 3.11+ with one streaming-parser dependency |
+| Browser uploads with progress and copyable links | Configurable expiry, total storage, and per-IP quotas | Prebuilt amd64/arm64 container images |
 | Bash client archives folders and multiple paths | Per-request size limits and bounded concurrent transfers | Non-root, read-only Docker container |
 | Light/dark themes and responsive layouts | Your uploads page shows only your current IP's files | Local JSON metadata; no external database |
 
@@ -86,41 +86,46 @@ The client requires Bash, curl, and tar (GNU/Linux or macOS). Upload failures ex
 
 ## Self-host
 
-### Docker Compose — build from source
+### Deploy the stable image
 
-Compose builds the checked-out source. It does **not** pull a GHCR image or use a `TAG` variable.
+The main Compose stack runs **`ghcr.io/nooblk-98/temp-file-share:live`**, built from a published stable release. No Git checkout, Python installation, or image build is required on your server.
 
-```bash
-git clone --branch v2.1.0 https://github.com/nooblk-98/temp-file-share.git
-cd temp-file-share
-cp .env.example .env
-sudo mkdir -p /opt/temp-file-share/uploads /opt/temp-file-share/data
-sudo chown 10001:10001 /opt/temp-file-share/uploads /opt/temp-file-share/data
-# Edit .env: set your public URL, quotas, and trusted proxy peers.
-docker compose up -d --build
-```
-
-Default host binding: **127.0.0.1:34100**, mapped to container port **54000**. Put a TLS reverse proxy in front. For container-to-container proxying, use a private shared Docker network and configure only that proxy's peer address in `TRUSTED_PROXIES`.
-
-The container uses uid/gid `10001:10001`, a read-only root filesystem, dropped capabilities, no-new-privileges, resource limits, and rotated logs. Uploads and metadata are persisted in the two bind mounts. Existing root-owned volumes need the [non-root migration](docs/MIGRATION-nonroot.md).
-
-### Run from source
+On a fresh Linux host with Docker Compose, curl, and sudo available, deploy in one command:
 
 ```bash
-python3 -m venv .venv
-. .venv/bin/activate
-python -m pip install -r app/requirements.txt
-PUBLIC_BASE_URL=http://localhost:54000 python app/backend.py
+mkdir temp-file-share && cd temp-file-share && curl -fsSL https://raw.githubusercontent.com/nooblk-98/temp-file-share/v2.2.0/docker-compose.yaml -o docker-compose.yaml && printf '%s\n' 'PUBLIC_BASE_URL=http://localhost:34100' > .env && sudo install -d -o 10001 -g 10001 /opt/temp-file-share/uploads /opt/temp-file-share/data && docker compose up -d --pull always
 ```
 
-Requires **Python 3.11+**. The Docker image uses Python 3.12. Multipart parsing uses the maintained [`python-multipart`](https://multipart.fastapiexpert.com/) library instead of the removed standard-library `cgi` module.
+Open **http://localhost:34100** on that host. The fresh-install command creates a new working directory and persistent storage, saves the local URL, and starts the published image. It intentionally refuses to overwrite an existing `temp-file-share` directory.
+
+Already have this Compose file and configured storage?
+
+```bash
+docker compose up -d --pull always
+```
+
+For a public domain, edit `.env` first: set `PUBLIC_BASE_URL`, the intended `HOST_BIND`, and exact `TRUSTED_PROXIES` peers. Default binding is **127.0.0.1:34100**, mapped to container port **54000**. A proxy on another host or over a tunnel needs a reachable private interface—not loopback. Keep backend access restricted to that proxy.
+
+The container uses uid/gid `10001:10001`, a read-only root filesystem, dropped capabilities, no-new-privileges, resource limits, and rotated logs. Existing root-owned storage needs the [non-root migration](docs/MIGRATION-nonroot.md).
+
+### Update or pin a release
+
+The `live` and `latest` tags move only after a stable release passes checks and its multi-platform image passes the container smoke test. To pin a release instead, put `IMAGE_TAG=2.2.0` in `.env`; a manifest digest can be used for a content-addressed pin.
+
+```bash
+docker compose up -d --pull always
+```
+
+See [deployment options](docs/deployment.md) for alternative stacks, source builds, rollback, and image verification.
 
 ### Configuration
 
-Environment variables override `app/config.json`. Compose forwards the variables in [.env.example](.env.example). Sizes use binary units: GB = GiB, MB = MiB.
+Environment variables override `app/config.json`. Compose reads the variables in [.env.example](.env.example). Sizes use binary units: GB = GiB, MB = MiB.
 
 | Setting | Shipped default | Purpose |
 | --- | --- | --- |
+| `IMAGE_REPOSITORY` | `ghcr.io/nooblk-98/temp-file-share` | Published container repository |
+| `IMAGE_TAG` | `live` | Stable release channel, or a pinned version such as `2.2.0` |
 | `PUBLIC_BASE_URL` | `https://fs.app.itsnooblk.com` | Public origin used for links and the served upload client; change for your host |
 | `UPLOAD_DIR` | `uploads` | Stored files; relative to `app/` |
 | `FILES_DB` | `data/files_db.json` | JSON metadata; relative to `app/` |
@@ -159,13 +164,6 @@ location / {
 
 Set `PUBLIC_BASE_URL` to your HTTPS origin. Set `TRUSTED_PROXIES` to the exact peer address the application sees for nginx—Docker may present a bridge gateway, not `127.0.0.1`. The proxy must **overwrite** incoming forwarding headers. Do not trust `0.0.0.0/0` or expose the backend directly when proxy trust is enabled.
 
-### Development deployments with Portainer
-
-[Deploy development to Portainer](.github/workflows/deploy-development.yml) runs on pushes to `development`, or manually when that branch is selected. It first calls the reusable [CI workflow](.github/workflows/ci.yml); only successful checks trigger the stack webhook. Feature-branch pushes and PRs do not deploy.
-
-Configure the GitHub repository secret **`PORTAINER_DEVELOPMENT_WEBHOOK_URL`** with the development stack's webhook. Configure that Portainer Git stack to track **`refs/heads/development`**, use `docker-compose.yaml`, and rebuild the source when redeploying. The webhook requests a redeploy; it does not change the stack's Git ref or configuration. The existing `main` deployment workflow and its `DEPLOY_WEBHOOK_URL` secret are separate and unchanged.
-
-No webhook URL is committed or printed. A successful webhook request means Portainer accepted it; confirm container health in Portainer after deployment.
 
 ## API
 
@@ -198,29 +196,25 @@ Uploads require `Content-Length`; chunked request bodies are not supported. Comm
 - **One server process per storage directory:** a process-local lock and atomic JSON replacement protect concurrent requests and cleanup. Do not point multiple replicas at the same JSON database. Stop the server before backing up or restoring both persistent directories together. Corrupt metadata fails closed; restore a known-good copy rather than resetting it.
 - HTTP access logs and the metadata file still contain IPs for operations/quota ownership. The UI loads Google Fonts; self-host fonts if your deployment must avoid that external request.
 
-## Development and checks
+## Verification
 
-```bash
-python -m pip install -r app/requirements.txt ruff==0.17.4
-ruff check app tests
-python -m unittest discover -s tests -v
-
-cd tests/browser
-npm ci
-npx playwright install chromium
-PYTHON=python npm test
-```
-
-CI runs regression tests on Python **3.11–3.14**, a hardened Docker upload/download smoke test, and Chromium workflow/responsive checks at **320, 390, 768, 1024, and 1440 px**, in light and dark themes. There is currently **no image-publish, signing, SBOM, or release-creation workflow**; this README does not imply those exist.
+The release is checked on Python 3.11–3.14, with browser workflows and hardened Docker upload/download smoke tests. See [testing instructions](docs/testing.md) for details.
 
 ```text
 app/                   HTTP service, storage, streaming parser, UI, Bash client
 tests/                 Backend regression tests and Playwright browser checks
 docs/ui-review/        Real screenshots, provenance, before/after evidence
-.github/workflows/     CI, existing main deployment, development deployment
-docker-compose.yaml    Hardened source-build deployment
+.github/workflows/     CI and deployment automation
+docker-compose.yaml    Stable published-image deployment
+docs/                  Deployment options, image automation, and testing
 RELEASE_NOTES.md        Release changes and migration guidance
 ```
+
+## Contributions welcome
+
+Contributions are welcome: bug reports, documentation fixes, accessibility improvements, performance work, and new tests all help make file sharing better.
+
+Read [CONTRIBUTING.md](CONTRIBUTING.md) to set up the project, run checks, and send a focused pull request. Please include clear reproduction steps for bugs and screenshots for UI changes. For security issues, use GitHub's private vulnerability reporting when available instead of posting sensitive details publicly.
 
 ## License
 
