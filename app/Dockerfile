@@ -14,7 +14,7 @@
 # propose digest updates.
 # ---------------------------------------------------------------------------
 # python:3.12-alpine3.23
-FROM python:3.12-alpine3.23@sha256:1fd55c2f838c4f76262f9eeed899ff9168ea96ac383c61667d6f204325e1f169 AS builder
+FROM python:3.12-alpine3.23@sha256:9a7b46da82fe49a9118e0aa7e35ac3b831aa53ad4f4ebf3e16654732bc958a62 AS builder
 
 ENV PYTHONDONTWRITEBYTECODE=1
 
@@ -56,7 +56,7 @@ WORKDIR /app
 # interpreter actually links against.
 # ---------------------------------------------------------------------------
 # alpine:3.23
-FROM alpine:3.23@sha256:85fe1e81d6758c208f3e1eed4338a1997e19d4be002d4dd32d3100c9a8c010a0
+FROM alpine:3.23@sha256:469c9ea410b9215eaee7976ba6c0639039b444be8e5d638f7abbada189971eb2
 
 LABEL org.opencontainers.image.title="temp-file-share" \
       org.opencontainers.image.description="Self-hosted temporary file sharing (streaming Python)" \
